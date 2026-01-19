@@ -1,0 +1,102 @@
+################################
+# COMMON
+################################
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.log
+logs/
+*.tmp
+*.bak
+coverage/
+
+################################
+# ENV (NEVER COMMIT)
+################################
+.env
+.env.*
+!.env.example
+
+################################
+# ===== SERVER (Node.js / Express) =====
+################################
+server/node_modules/
+server/dist/
+server/build/
+
+server/npm-debug.log*
+server/yarn-debug.log*
+server/pnpm-debug.log*
+
+# MongoDB local data
+server/data/
+server/dump/
+
+################################
+# ===== MOBILE (React Native) =====
+################################
+mobile/node_modules/
+
+# Metro / React Native cache
+mobile/.metro-health-check*
+mobile/*.hprof
+
+################################
+# ANDROID
+################################
+mobile/android/.gradle/
+mobile/android/build/
+mobile/android/app/build/
+mobile/android/local.properties
+mobile/android/.idea/
+mobile/android/app/debug/
+mobile/android/app/release/
+
+# Android signing
+*.keystore
+*.jks
+
+################################
+# IOS
+################################
+mobile/ios/Pods/
+mobile/ios/build/
+mobile/ios/*.xcworkspace
+mobile/ios/*.xcuserdata/
+mobile/ios/*.xcuserstate
+mobile/ios/.xcode.env.local
+
+################################
+# EXPO (if used later)
+################################
+mobile/.expo/
+mobile/.expo-shared/
+mobile/web-build/
+
+################################
+# TEST / COVERAGE
+################################
+.nyc_output/
+*.lcov
+
+################################
+# TEMP / CACHE
+################################
+.npm
+.eslintcache
+.stylelintcache
+.node_repl_history
+.cache
+.parcel-cache
+
+################################
+# YARN v3 (PnP)
+################################
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
