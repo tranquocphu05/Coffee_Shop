@@ -2,6 +2,43 @@ const { accModel } = require("../models/account.model");
 const bcrypt = require("bcrypt");
 const crypto = require("crypto");
 
+// Verify token endpoint
+exports.verifyToken = async (req, res) => {
+  try {
+    // Lấy token từ header hoặc query string
+    const authHeader = req.headers.authorization;
+    let token = null;
+    
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.split(" ")[1];
+    } else if (req.query.token) {
+      token = req.query.token;
+    }
+    
+    if (!token) {
+      return res.status(401).json({ error: "No token provided" });
+    }
+
+    // Tìm user theo token
+    const user = await accModel.findOne({ token, is_delete: false });
+    
+    if (!user) {
+      return res.status(401).json({ error: "Invalid token" });
+    }
+
+    const userResponse = user.toObject();
+    delete userResponse.pass;
+
+    return res.status(200).json({
+      message: "Token valid",
+      data: { user: userResponse },
+    });
+  } catch (err) {
+    console.log('Verify token error:', err.message);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
 exports.doLogin = async (req, res) => {
   try {
     const { email, pass } = req.body;
@@ -14,6 +51,11 @@ exports.doLogin = async (req, res) => {
     if (!user) {
       return res.status(401).json({ error: "Incorrect login credentials" });
     }
+
+    // Kiểm tra role admin nếu cần (có thể bỏ qua nếu muốn cho tất cả user đăng nhập)
+    // if (user.role !== 'admin') {
+    //   return res.status(403).json({ error: "Admin access required" });
+    // }
 
     const token = await accModel.makeAuthToken(user);
 
