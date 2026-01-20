@@ -6,6 +6,7 @@ var categoryCtrl = require("../controllers/category.controller");
 
 // Acc
 router.post("/account/register", accCtrl.doReg);
+<<<<<<< HEAD
 router.post("/account/login", accCtrl.doLogin);
 router.get("/account/verify", accCtrl.verifyToken);
 
@@ -22,5 +23,9 @@ router.get("/product", productCtrl.getProducts);
 router.get("/product/:id", productCtrl.getProductById);
 router.put("/product/:id", productCtrl.updateProduct);
 router.delete("/product/:id", productCtrl.deleteProduct);
+=======
+router.post("/account/login/app", accCtrl.doLoginApp);
+router.post("/account/login/web", accCtrl.doLoginWeb);
+>>>>>>> 8fb863b (Create UI login Web admin, Code funtion loginWeb)
 
 module.exports = router;
