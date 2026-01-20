@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Admin Login - Coffee Shop Management</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;300;400;500;600;700;800&amp;display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+      rel="stylesheet"
+    />
+    <script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              primary: "#6F4E37",
+              "background-light": "#f6f7f7",
+              "background-dark": "#151b1d",
+            },
+            fontFamily: {
+              display: ["Manrope", "sans-serif"],
+            },
+            borderRadius: {
+              DEFAULT: "0.25rem",
+              lg: "0.5rem",
+              xl: "0.75rem",
+              full: "9999px",
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      body {
+        font-family: "Manrope", sans-serif;
+      }
+      .checkbox-custom {
+        --checkbox-tick-svg: url("data:image/svg+xml,%3csvg viewBox=%270 0 16 16%27 fill=%27white%27 xmlns=%27http://www.w3.org/2000/svg%27%3e%3cpath d=%27M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z%27/%3e%3c/svg%3e");
+      }
+    </style>
+  </head>
+  <body
+    class="bg-background-light dark:bg-background-dark min-h-screen flex items-center justify-center overflow-x-hidden"
+  >
+    <div class="flex h-screen w-full overflow-hidden">
+      <!-- Left Side: Visual Brand Space -->
+      <div class="hidden lg:flex lg:w-1/2 relative bg-primary overflow-hidden">
+        <div
+          class="absolute inset-0 z-10 bg-primary/40 backdrop-blur-[2px]"
+        ></div>
+        <div
+          class="absolute inset-0 bg-cover bg-center transition-transform duration-1000 hover:scale-105"
+          data-alt="Coffee beans and coffee shop background"
+        ></div>
+        <div
+          class="relative z-20 flex flex-col justify-between p-16 w-full h-full"
+        >
+          <div class="flex items-center gap-3">
+            <div
+              class="h-12 w-12 bg-white rounded-xl flex items-center justify-center shadow-lg"
+            >
+              <span
+                class="material-symbols-outlined text-primary text-3xl font-bold"
+                >local_cafe</span
+              >
+            </div>
+            <span
+              class="text-white text-2xl font-black tracking-tight uppercase"
+              >Coffee Shop <span class="font-light">Admin</span></span
+            >
+          </div>
+          <div class="max-w-md">
+            <h2 class="text-white text-5xl font-extrabold leading-tight mb-6">
+              Quản lý quán cà phê chuyên nghiệp.
+            </h2>
+            <p class="text-white/80 text-lg leading-relaxed font-normal">
+              Hệ thống quản lý sản phẩm, đơn hàng và khách hàng hoàn chỉnh cho
+              quán cà phê của bạn.
+            </p>
+          </div>
+          <div class="flex gap-6 text-white/50 text-sm font-medium">
+            <span>© 2024 Coffee Shop</span>
+            <a class="hover:text-white transition-colors" href="#">Hướng dẫn</a>
+            <a class="hover:text-white transition-colors" href="#">Hỗ trợ</a>
+          </div>
+        </div>
+      </div>
+      <!-- Right Side: Login Form -->
+      <div
+        class="w-full lg:w-1/2 flex items-center justify-center p-8 bg-background-light dark:bg-background-dark"
+      >
+        <div class="w-full max-w-[480px] space-y-8">
+          <!-- PageHeading Component Style -->
+          <div class="flex flex-col gap-3">
+            <div class="lg:hidden flex items-center gap-2 mb-4">
+              <span
+                class="material-symbols-outlined text-primary dark:text-white text-3xl"
+                >local_cafe</span
+              >
+              <span
+                class="text-primary dark:text-white text-xl font-black tracking-tight"
+                >COFFEE SHOP</span
+              >
+            </div>
+            <p
+              class="text-[#131516] dark:text-white text-4xl font-black leading-tight tracking-[-0.033em]"
+            >
+              Đăng nhập quản trị
+            </p>
+            <p
+              class="text-[#6c797f] dark:text-gray-400 text-base font-normal leading-normal"
+            >
+              Chào mừng trở lại! Vui lòng nhập thông tin đăng nhập của bạn.
+            </p>
+          </div>
+          <!-- Form Section -->
+          <form class="space-y-6" id="login-form">
+            <!-- TextField: Email -->
+            <div class="flex flex-col gap-2">
+              <label class="flex flex-col">
+                <p
+                  class="text-[#131516] dark:text-gray-200 text-base font-medium leading-normal pb-2"
+                >
+                  Email
+                </p>
+                <input
+                  id="email"
+                  name="email"
+                  class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-[#131516] dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary/20 border border-[#dee1e3] dark:border-gray-700 bg-white dark:bg-background-dark focus:border-primary h-14 placeholder:text-[#6c797f] dark:placeholder:text-gray-500 p-[15px] text-base font-normal leading-normal transition-all"
+                  placeholder="e.g., admin@coffeeshop.com"
+                  required=""
+                  type="email"
+                />
+              </label>
+            </div>
+            <!-- TextField: Password -->
+            <div class="flex flex-col gap-2">
+              <label class="flex flex-col">
+                <p
+                  class="text-[#131516] dark:text-gray-200 text-base font-medium leading-normal pb-2"
+                >
+                  Mật khẩu
+                </p>
+                <div
+                  class="flex w-full flex-1 items-stretch rounded-lg shadow-sm"
+                >
+                  <input
+                    id="password"
+                    name="pass"
+                    class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-l-lg text-[#131516] dark:text-white focus:outline-0 focus:ring-0 border border-[#dee1e3] dark:border-gray-700 bg-white dark:bg-background-dark focus:border-primary h-14 placeholder:text-[#6c797f] dark:placeholder:text-gray-500 p-[15px] border-r-0 pr-2 text-base font-normal leading-normal transition-all"
+                    placeholder="Nhập mật khẩu"
+                    required=""
+                    type="password"
+                  />
+                  <button
+                    class="text-[#6c797f] flex border border-[#dee1e3] dark:border-gray-700 bg-white dark:bg-background-dark items-center justify-center px-[15px] rounded-r-lg border-l-0 hover:text-primary transition-colors"
+                    type="button"
+                  >
+                    <span class="material-symbols-outlined">visibility</span>
+                  </button>
+                </div>
+              </label>
+            </div>
+            <!-- Actions: Checkbox & Link -->
+            <!-- <div class="flex items-center justify-between px-1">
+              <div class="checkbox-custom">
+                <label class="flex items-center gap-x-3 cursor-pointer group">
+                  <input
+                    class="h-5 w-5 rounded border-[#dee1e3] dark:border-gray-700 border-2 bg-transparent text-primary checked:bg-primary checked:border-primary focus:ring-0 focus:ring-offset-0 transition-all"
+                    type="checkbox"
+                  />
+                  <p
+                    class="text-[#131516] dark:text-gray-300 text-sm font-medium leading-normal group-hover:text-primary transition-colors"
+                  >
+                    Remember Me
+                  </p>
+                </label>
+              </div>
+              <a
+                class="text-primary dark:text-blue-400 text-sm font-semibold hover:underline decoration-2 underline-offset-4"
+                href="#"
+                >Forgot Password?</a
+              >
+            </div> -->
+            <!-- Primary Action Button -->
+            <button
+              class="w-full h-14 bg-primary text-white font-bold text-lg rounded-lg shadow-lg shadow-primary/20 hover:bg-primary/90 hover:-translate-y-0.5 active:translate-y-0 transition-all flex items-center justify-center gap-2"
+              type="submit"
+            >
+              <span>Đăng nhập</span>
+              <span class="material-symbols-outlined">login</span>
+            </button>
+          </form>
+          <!-- Footer Section -->
+          <div class="pt-10 border-t border-[#dee1e3] dark:border-gray-800">
+            <div class="flex flex-col items-center gap-4">
+              <p class="text-[#6c797f] dark:text-gray-500 text-sm">
+                Hệ thống v1.0.0
+              </p>
+              <div class="flex gap-4">
+                <a
+                  class="text-[#6c797f] dark:text-gray-500 text-xs hover:text-primary transition-colors uppercase tracking-widest font-bold"
+                  href="#"
+                  >Chính sách bảo mật</a
+                >
+                <span class="text-[#dee1e3] dark:text-gray-800">•</span>
+                <a
+                  class="text-[#6c797f] dark:text-gray-500 text-xs hover:text-primary transition-colors uppercase tracking-widest font-bold"
+                  href="#"
+                  >Điều khoản sử dụng</a
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Simple client-side login handler that calls /api/account/login/web -->
+    <script>
+      const form = document.getElementById("login-form");
+      const emailInput = document.getElementById("email");
+      const passwordInput = document.getElementById("password");
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const email = emailInput.value.trim();
+        const pass = passwordInput.value;
+
+        try {
+          const res = await fetch("/api/account/login/web", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ email, pass }),
+          });
+
+          const data = await res.json();
+
+          if (!res.ok) {
+            alert(data.error || "Đăng nhập thất bại, vui lòng thử lại.");
+            return;
+          }
+
+          // Lưu token nếu cần dùng cho các request sau
+          if (data.data && data.data.token) {
+            localStorage.setItem("admin_token", data.data.token);
+          }
+
+          // Chuyển hướng vào trang dashboard admin
+          window.location.href = "/admin/dashboard";
+        } catch (err) {
+          console.error(err);
+          alert("Có lỗi xảy ra, vui lòng thử lại sau.");
+        }
+      });
+    </script>
+  </body>
+</html>

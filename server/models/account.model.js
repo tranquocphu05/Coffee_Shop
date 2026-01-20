@@ -6,21 +6,20 @@ const bcrypt = require("bcrypt");
 
 const accSchema = new db.mongoose.Schema(
   {
-    fullName: { type: String },
+    name: { type: String },
     email: { type: String, required: true, unique: true },
     pass: { type: String, required: true, unique: true },
     role: {
       type: String,
-      enum: ["admin", "engineer", "user"],
+      enum: ["superAdmin", "admin", "engineer", "user"],
       default: "user",
     },
-    phone: { type: String },
     image: { type: String },
-    address: { type: String },
     token: { type: String },
+    is_active: { type: Boolean, default: true },
     is_delete: { type: Boolean, default: false },
   },
-  { collection: "account" }
+  { collection: "account" },
 );
 
 accSchema.statics.makeAuthToken = async (acc) => {
