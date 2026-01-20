@@ -41,6 +41,7 @@
             gap: 15px;
         }
 
+
         .btn-logout {
             padding: 8px 20px;
             background: rgba(255, 255, 255, 0.2);
@@ -82,7 +83,7 @@
 
         .info-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-template-columns: repeat(5, minmax(0, 1fr));
             gap: 20px;
             margin-top: 20px;
         }
@@ -103,6 +104,163 @@
         .info-card p {
             color: #666;
             font-size: 14px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 16px;
+            margin-top: 15px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 18px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+        }
+
+        .stat-title {
+            font-size: 13px;
+            color: #667eea;
+            margin-bottom: 6px;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .stat-note {
+            font-size: 12px;
+            color: #888;
+            margin-top: 6px;
+        }
+
+        .link-card {
+            text-decoration: none;
+            color: inherit;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .link-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+        }
+
+        .section-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            font-size: 14px;
+            background: white;
+        }
+
+        .data-table th,
+        .data-table td {
+            border: 1px solid #e5e5e5;
+            padding: 10px;
+            text-align: left;
+        }
+
+        .data-table th {
+            background: #f0f2ff;
+            color: #333;
+        }
+
+        .table-empty {
+            color: #666;
+            margin-top: 10px;
+        }
+
+        .section-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-refresh {
+            padding: 6px 12px;
+            border: 1px solid #667eea;
+            background: white;
+            color: #667eea;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-group label {
+            font-size: 13px;
+            color: #555;
+            font-weight: bold;
+        }
+
+        .form-group input {
+            padding: 8px 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+
+        .btn-primary {
+            padding: 8px 14px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        .form-group select,
+        .form-group textarea {
+            padding: 8px 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 70px;
+        }
+
+        .form-message {
+            margin-top: 10px;
+            font-size: 13px;
+        }
+
+        .form-message.error {
+            color: #c33;
+        }
+
+        .form-message.success {
+            color: #2d9d5b;
         }
 
         .error-message {
@@ -144,12 +302,40 @@
                 <p>Quản lý tài khoản người dùng</p>
             </div>
             <div class="info-card">
-                <h3>☕ Quản lý sản phẩm</h3>
-                <p>Quản lý menu và sản phẩm</p>
-            </div>
-            <div class="info-card">
                 <h3>📝 Quản lý đơn hàng</h3>
                 <p>Xem và xử lý đơn hàng</p>
+            </div>
+            <a class="info-card link-card" href="/category.html">
+                <h3>📂 Quản lý danh mục</h3>
+                <p>Tạo mới và cập nhật danh mục sản phẩm</p>
+            </a>
+            <a class="info-card link-card" href="/product.html">
+                <h3>☕ Quản lý sản phẩm</h3>
+                <p>Thêm và quản lý menu sản phẩm</p>
+            </a>
+        </div>
+
+        <div class="section-card" id="statsSection">
+            <div class="section-actions">
+                <h3>Tổng quan thống kê</h3>
+                <button class="btn-refresh" id="refreshStats">Tải lại</button>
+            </div>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-title">Tổng danh mục</div>
+                    <div class="stat-value" id="statCategoryCount">0</div>
+                    <div class="stat-note">Danh mục đang hoạt động</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-title">Tổng sản phẩm</div>
+                    <div class="stat-value" id="statProductCount">0</div>
+                    <div class="stat-note">Sản phẩm đang bán</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-title">Cập nhật gần nhất</div>
+                    <div class="stat-value" id="statUpdated">--:--</div>
+                    <div class="stat-note">Thời điểm tải dữ liệu</div>
+                </div>
             </div>
         </div>
     </div>
@@ -267,6 +453,46 @@
                 }
             });
         }
+
+        function updateStats({ categoryCount, productCount } = {}) {
+            if (typeof categoryCount === 'number') {
+                document.getElementById('statCategoryCount').textContent = categoryCount;
+            }
+            if (typeof productCount === 'number') {
+                document.getElementById('statProductCount').textContent = productCount;
+            }
+            const now = new Date();
+            const timeLabel = now.toLocaleTimeString('vi-VN', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            document.getElementById('statUpdated').textContent = timeLabel;
+        }
+
+        async function loadStats() {
+            const headers = {};
+            if (token) {
+                headers['Authorization'] = 'Bearer ' + token;
+            }
+            const [categoryRes, productRes] = await Promise.all([
+                fetch('/api/category', { headers }),
+                fetch('/api/product', { headers })
+            ]);
+            const categoryData = await categoryRes.json();
+            const productData = await productRes.json();
+            const categories = (categoryData.data && categoryData.data.categories) || [];
+            const products = (productData.data && productData.data.products) || [];
+            updateStats({ categoryCount: categories.length, productCount: products.length });
+        }
+
+        const refreshStatsBtn = document.getElementById('refreshStats');
+        if (refreshStatsBtn) {
+            refreshStatsBtn.addEventListener('click', async () => {
+                loadStats();
+            });
+        }
+
+        loadStats();
     </script>
 </body>
 </html>

@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý danh mục - Coffee Shop</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .btn-back {
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            text-decoration: none;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        .section-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .section-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-refresh {
+            padding: 6px 12px;
+            border: 1px solid #667eea;
+            background: white;
+            color: #667eea;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-group label {
+            font-size: 13px;
+            color: #555;
+            font-weight: bold;
+        }
+
+        .form-group input {
+            padding: 8px 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+
+        .btn-primary {
+            padding: 8px 14px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        .form-message {
+            margin-top: 10px;
+            font-size: 13px;
+        }
+
+        .form-message.error {
+            color: #c33;
+        }
+
+        .form-message.success {
+            color: #2d9d5b;
+        }
+
+        .table-empty {
+            color: #666;
+            margin-top: 10px;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            font-size: 14px;
+            background: white;
+        }
+
+        .data-table th,
+        .data-table td {
+            border: 1px solid #e5e5e5;
+            padding: 10px;
+            text-align: left;
+        }
+
+        .data-table th {
+            background: #f0f2ff;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <h1>📂 Quản lý danh mục</h1>
+            <a class="btn-back" href="/admin.html">Về trang Admin</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="section-card">
+            <div class="section-actions">
+                <h3>Danh sách danh mục</h3>
+                <button class="btn-refresh" id="refreshCategories">Tải lại</button>
+            </div>
+            <form id="categoryForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="categoryCode">Mã danh mục</label>
+                        <input type="text" id="categoryCode" name="categoryCode" placeholder="VD: CF" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="categoryName">Tên danh mục</label>
+                        <input type="text" id="categoryName" name="categoryName" placeholder="VD: Cà phê" required>
+                    </div>
+                </div>
+                <div class="form-row" style="grid-template-columns: auto 1fr; align-items: center;">
+                    <button type="submit" class="btn-primary">Thêm danh mục</button>
+                    <div id="categoryFormMessage" class="form-message"></div>
+                </div>
+            </form>
+            <div id="categoryStatus" class="table-empty">Đang tải dữ liệu...</div>
+            <table class="data-table" id="categoryTable" style="display: none;">
+                <thead>
+                    <tr>
+                        <th>Mã danh mục</th>
+                        <th>Tên danh mục</th>
+                    </tr>
+                </thead>
+                <tbody id="categoryTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        let token = urlParams.get('token') || localStorage.getItem('adminToken');
+
+        async function fetchCategories() {
+            const categoryStatus = document.getElementById('categoryStatus');
+            const categoryTable = document.getElementById('categoryTable');
+            const categoryTableBody = document.getElementById('categoryTableBody');
+
+            categoryStatus.textContent = 'Đang tải dữ liệu...';
+            categoryTable.style.display = 'none';
+            categoryTableBody.innerHTML = '';
+
+            try {
+                const headers = {};
+                if (token) {
+                    headers['Authorization'] = 'Bearer ' + token;
+                }
+                const response = await fetch('/api/category', { headers });
+                const data = await response.json();
+
+                if (!response.ok) {
+                    categoryStatus.textContent = data.error || 'Không thể tải danh mục.';
+                    return [];
+                }
+
+                const categories = (data.data && data.data.categories) || [];
+                if (categories.length === 0) {
+                    categoryStatus.textContent = 'Chưa có danh mục nào.';
+                    return [];
+                }
+
+                categoryTableBody.innerHTML = categories
+                    .map((category) => {
+                        return `
+                            <tr>
+                                <td>${category.category_code || ''}</td>
+                                <td>${category.category_name || ''}</td>
+                            </tr>
+                        `;
+                    })
+                    .join('');
+
+                categoryStatus.textContent = '';
+                categoryTable.style.display = 'table';
+                return categories;
+            } catch (error) {
+                console.error('Fetch categories error:', error);
+                categoryStatus.textContent = 'Lỗi tải danh mục.';
+                return [];
+            }
+        }
+
+        async function createCategory(payload) {
+            const categoryFormMessage = document.getElementById('categoryFormMessage');
+            categoryFormMessage.textContent = '';
+            categoryFormMessage.className = 'form-message';
+
+            try {
+                const headers = { 'Content-Type': 'application/json' };
+                if (token) {
+                    headers['Authorization'] = 'Bearer ' + token;
+                }
+                const response = await fetch('/api/category', {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify(payload)
+                });
+                const data = await response.json();
+
+                if (!response.ok) {
+                    categoryFormMessage.textContent = data.error || 'Không thể tạo danh mục.';
+                    categoryFormMessage.classList.add('error');
+                    return false;
+                }
+
+                categoryFormMessage.textContent = 'Thêm danh mục thành công!';
+                categoryFormMessage.classList.add('success');
+                return true;
+            } catch (error) {
+                console.error('Create category error:', error);
+                categoryFormMessage.textContent = 'Lỗi tạo danh mục.';
+                categoryFormMessage.classList.add('error');
+                return false;
+            }
+        }
+
+        const refreshCategoriesBtn = document.getElementById('refreshCategories');
+        if (refreshCategoriesBtn) {
+            refreshCategoriesBtn.addEventListener('click', fetchCategories);
+        }
+
+        const categoryForm = document.getElementById('categoryForm');
+        if (categoryForm) {
+            categoryForm.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                const categoryCodeInput = document.getElementById('categoryCode');
+                const categoryNameInput = document.getElementById('categoryName');
+                const category_code = categoryCodeInput.value.trim();
+                const category_name = categoryNameInput.value.trim();
+
+                if (!category_code || !category_name) {
+                    const categoryFormMessage = document.getElementById('categoryFormMessage');
+                    categoryFormMessage.textContent = 'Vui lòng nhập đầy đủ thông tin.';
+                    categoryFormMessage.className = 'form-message error';
+                    return;
+                }
+
+                const created = await createCategory({ category_code, category_name });
+                if (created) {
+                    categoryCodeInput.value = '';
+                    categoryNameInput.value = '';
+                    fetchCategories();
+                }
+            });
+        }
+
+        fetchCategories();
+    </script>
+</body>
+</html>
