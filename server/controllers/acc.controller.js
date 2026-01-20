@@ -1,6 +1,7 @@
 const { accModel } = require("../models/account.model");
 const bcrypt = require("bcrypt");
 const crypto = require("crypto");
+const { uploadFile } = require("../helpers/upload.helper");
 
 // Verify token endpoint
 exports.verifyToken = async (req, res) => {
@@ -72,6 +73,49 @@ exports.doLogin = async (req, res) => {
   }
 };
 
+// Login cho web admin (chỉ admin và engineer)
+exports.doLoginWeb = async (req, res, next) => {
+  try {
+    const { email, pass } = req.body;
+
+    if (!email || !pass) {
+      return res.status(400).json({ error: "Missing email or password" });
+    }
+
+    // Dùng cùng model account như app mobile
+    const user = await accModel.findByEmailPasswd(email, pass);
+    if (!user) {
+      return res.status(401).json({ error: "Incorrect login credentials" });
+    }
+
+    if (!user.is_active) {
+      return res
+        .status(403)
+        .json({ error: "Account is locked. Please contact admin" });
+    }
+
+    // Chỉ cho phép admin và engineer đăng nhập vào web admin
+    if (!user.role || user.role === "user") {
+      return res.status(403).json({
+        error: "Bạn không có quyền đăng nhập vào hệ thống quản trị",
+      });
+    }
+
+    const token = await accModel.makeAuthToken(user);
+
+    const userResponse = user.toObject();
+    delete userResponse.pass;
+
+    return res.status(200).json({
+      message: "Login successful",
+      data: { user: userResponse, token },
+    });
+  } catch (error) {
+    console.log(error.message);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
 exports.doReg = async (req, res, next) => {
   try {
     const { email, pass } = req.body;
@@ -112,4 +156,38 @@ exports.doReg = async (req, res, next) => {
     console.log(error.message);
     return res.status(500).json({ error: "Internal server error" });
   }
+};
+
+exports.UploadAvatar = async (req, res, next) => {
+  let dataRes = { msg: "OK" };
+  try {
+    const { _id } = req.params;
+    if (!req.file) throw new Error("No file uploaded");
+
+    const user = await accModel.findById(_id);
+    if (!user) throw new Error("User not found");
+
+    const fileName = await uploadFile(req.file, "avatars");
+    user.image = fileName;
+    await user.save();
+
+    dataRes.msg = "Profile picture updated successfully";
+    dataRes.data = user;
+  } catch (error) {
+    dataRes.msg = error.message;
+    dataRes.data = null;
+  }
+  res.json(dataRes);
+};
+
+exports.GetAllAccount = async (req, res, next) => {
+  let dataRes = { msg: "OK" };
+  try {
+    let list = await accModel.find();
+    dataRes.data = list;
+  } catch (error) {
+    dataRes.data = null;
+    dataRes.msg = error.message;
+  }
+  res.json(dataRes);
 };
