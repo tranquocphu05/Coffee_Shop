@@ -6,6 +6,8 @@ var multer = require("multer");
 var accCtrl = require("../controllers/acc.controller");
 var productCtrl = require("../controllers/product.controller");
 var categoryCtrl = require("../controllers/category.controller");
+var jwt = require("jsonwebtoken");
+var mdw = require("../middleware/api.auth");
 
 var tempDir = path.join(__dirname, "../tmp");
 if (!fs.existsSync(tempDir)) {
