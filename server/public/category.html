@@ -109,6 +109,57 @@
             font-weight: bold;
         }
 
+        .btn-secondary {
+            padding: 8px 14px;
+            background: #f0f2ff;
+            color: #4b5bd4;
+            border: 1px solid #ccd4ff;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        .btn-danger {
+            padding: 6px 10px;
+            background: #ffefef;
+            color: #c33;
+            border: 1px solid #f5b3b3;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .btn-action {
+            padding: 6px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            border: 1px solid transparent;
+        }
+
+        .btn-edit {
+            background: #eef2ff;
+            color: #4150c8;
+            border-color: #c8d0ff;
+        }
+
+        .table-actions {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .edit-panel {
+            margin-top: 20px;
+            padding: 14px;
+            border: 1px dashed #ccd4ff;
+            border-radius: 8px;
+            background: #f8f9ff;
+        }
+
         .form-message {
             margin-top: 10px;
             font-size: 13px;
@@ -178,12 +229,31 @@
                     <div id="categoryFormMessage" class="form-message"></div>
                 </div>
             </form>
+            <form id="editCategoryForm" class="edit-panel" style="display: none;">
+                <h4>Chỉnh sửa danh mục</h4>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="editCategoryCode">Mã danh mục</label>
+                        <input type="text" id="editCategoryCode" name="editCategoryCode" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editCategoryName">Tên danh mục</label>
+                        <input type="text" id="editCategoryName" name="editCategoryName" required>
+                    </div>
+                </div>
+                <div class="form-row" style="grid-template-columns: auto auto 1fr; align-items: center;">
+                    <button type="submit" class="btn-primary">Lưu thay đổi</button>
+                    <button type="button" class="btn-secondary" id="cancelEditCategory">Hủy</button>
+                    <div id="editCategoryMessage" class="form-message"></div>
+                </div>
+            </form>
             <div id="categoryStatus" class="table-empty">Đang tải dữ liệu...</div>
             <table class="data-table" id="categoryTable" style="display: none;">
                 <thead>
                     <tr>
                         <th>Mã danh mục</th>
                         <th>Tên danh mục</th>
+                        <th>Hành động</th>
                     </tr>
                 </thead>
                 <tbody id="categoryTableBody"></tbody>
@@ -194,6 +264,8 @@
     <script>
         const urlParams = new URLSearchParams(window.location.search);
         let token = urlParams.get('token') || localStorage.getItem('adminToken');
+        let currentEditId = null;
+        let categoryMap = {};
 
         async function fetchCategories() {
             const categoryStatus = document.getElementById('categoryStatus');
@@ -223,12 +295,20 @@
                     return [];
                 }
 
+                categoryMap = {};
                 categoryTableBody.innerHTML = categories
                     .map((category) => {
+                        categoryMap[String(category._id)] = category;
                         return `
                             <tr>
                                 <td>${category.category_code || ''}</td>
                                 <td>${category.category_name || ''}</td>
+                                <td>
+                                    <div class="table-actions">
+                                        <button class="btn-action btn-edit" data-id="${category._id}">Sửa</button>
+                                        <button class="btn-action btn-danger" data-id="${category._id}">Xóa</button>
+                                    </div>
+                                </td>
                             </tr>
                         `;
                     })
@@ -278,6 +358,63 @@
             }
         }
 
+        async function updateCategory(id, payload) {
+            const editCategoryMessage = document.getElementById('editCategoryMessage');
+            editCategoryMessage.textContent = '';
+            editCategoryMessage.className = 'form-message';
+
+            try {
+                const headers = { 'Content-Type': 'application/json' };
+                if (token) {
+                    headers['Authorization'] = 'Bearer ' + token;
+                }
+                const response = await fetch(`/api/category/${id}`, {
+                    method: 'PUT',
+                    headers,
+                    body: JSON.stringify(payload)
+                });
+                const data = await response.json();
+
+                if (!response.ok) {
+                    editCategoryMessage.textContent = data.error || 'Không thể cập nhật danh mục.';
+                    editCategoryMessage.classList.add('error');
+                    return false;
+                }
+
+                editCategoryMessage.textContent = 'Cập nhật danh mục thành công!';
+                editCategoryMessage.classList.add('success');
+                return true;
+            } catch (error) {
+                console.error('Update category error:', error);
+                editCategoryMessage.textContent = 'Lỗi cập nhật danh mục.';
+                editCategoryMessage.classList.add('error');
+                return false;
+            }
+        }
+
+        async function deleteCategory(id) {
+            try {
+                const headers = {};
+                if (token) {
+                    headers['Authorization'] = 'Bearer ' + token;
+                }
+                const response = await fetch(`/api/category/${id}`, {
+                    method: 'DELETE',
+                    headers
+                });
+                const data = await response.json();
+                if (!response.ok) {
+                    alert(data.error || 'Không thể xóa danh mục.');
+                    return false;
+                }
+                return true;
+            } catch (error) {
+                console.error('Delete category error:', error);
+                alert('Lỗi xóa danh mục.');
+                return false;
+            }
+        }
+
         const refreshCategoriesBtn = document.getElementById('refreshCategories');
         if (refreshCategoriesBtn) {
             refreshCategoriesBtn.addEventListener('click', fetchCategories);
@@ -304,6 +441,83 @@
                     categoryCodeInput.value = '';
                     categoryNameInput.value = '';
                     fetchCategories();
+                }
+            });
+        }
+
+        const editCategoryForm = document.getElementById('editCategoryForm');
+        if (editCategoryForm) {
+            editCategoryForm.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                if (!currentEditId) {
+                    return;
+                }
+
+                const editCategoryCode = document.getElementById('editCategoryCode');
+                const editCategoryName = document.getElementById('editCategoryName');
+                const category_code = editCategoryCode.value.trim();
+                const category_name = editCategoryName.value.trim();
+
+                if (!category_code || !category_name) {
+                    const editCategoryMessage = document.getElementById('editCategoryMessage');
+                    editCategoryMessage.textContent = 'Vui lòng nhập đầy đủ thông tin.';
+                    editCategoryMessage.className = 'form-message error';
+                    return;
+                }
+
+                const updated = await updateCategory(currentEditId, {
+                    category_code,
+                    category_name
+                });
+
+                if (updated) {
+                    currentEditId = null;
+                    editCategoryForm.style.display = 'none';
+                    fetchCategories();
+                }
+            });
+        }
+
+        const cancelEditCategory = document.getElementById('cancelEditCategory');
+        if (cancelEditCategory) {
+            cancelEditCategory.addEventListener('click', () => {
+                currentEditId = null;
+                editCategoryForm.style.display = 'none';
+                const editCategoryMessage = document.getElementById('editCategoryMessage');
+                editCategoryMessage.textContent = '';
+                editCategoryMessage.className = 'form-message';
+            });
+        }
+
+        const categoryTableBody = document.getElementById('categoryTableBody');
+        if (categoryTableBody) {
+            categoryTableBody.addEventListener('click', async (event) => {
+                const target = event.target;
+                if (!(target instanceof HTMLElement)) {
+                    return;
+                }
+                if (target.classList.contains('btn-edit')) {
+                    const id = target.getAttribute('data-id');
+                    if (!id || !categoryMap[id]) return;
+                    const category = categoryMap[id];
+                    currentEditId = id;
+                    const editCategoryCode = document.getElementById('editCategoryCode');
+                    const editCategoryName = document.getElementById('editCategoryName');
+                    editCategoryCode.value = category.category_code || '';
+                    editCategoryName.value = category.category_name || '';
+                    editCategoryForm.style.display = 'block';
+                    editCategoryForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+                if (target.classList.contains('btn-danger')) {
+                    const id = target.getAttribute('data-id');
+                    if (!id) return;
+                    if (!confirm('Bạn có chắc chắn muốn xóa danh mục này?')) {
+                        return;
+                    }
+                    const deleted = await deleteCategory(id);
+                    if (deleted) {
+                        fetchCategories();
+                    }
                 }
             });
         }

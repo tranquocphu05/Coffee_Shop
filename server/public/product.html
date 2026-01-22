@@ -116,6 +116,57 @@
             font-weight: bold;
         }
 
+        .btn-secondary {
+            padding: 8px 14px;
+            background: #f0f2ff;
+            color: #4b5bd4;
+            border: 1px solid #ccd4ff;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        .btn-danger {
+            padding: 6px 10px;
+            background: #ffefef;
+            color: #c33;
+            border: 1px solid #f5b3b3;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .btn-action {
+            padding: 6px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            border: 1px solid transparent;
+        }
+
+        .btn-edit {
+            background: #eef2ff;
+            color: #4150c8;
+            border-color: #c8d0ff;
+        }
+
+        .table-actions {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .edit-panel {
+            margin-top: 20px;
+            padding: 14px;
+            border: 1px dashed #ccd4ff;
+            border-radius: 8px;
+            background: #f8f9ff;
+        }
+
         .form-message {
             margin-top: 10px;
             font-size: 13px;
@@ -197,6 +248,36 @@
                     <div id="productFormMessage" class="form-message"></div>
                 </div>
             </form>
+            <form id="editProductForm" class="edit-panel" style="display: none;">
+                <h4>Chỉnh sửa sản phẩm</h4>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="editProductCode">Mã sản phẩm</label>
+                        <input type="text" id="editProductCode" name="editProductCode" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editProductName">Tên sản phẩm</label>
+                        <input type="text" id="editProductName" name="editProductName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editProductCategory">Danh mục</label>
+                        <select id="editProductCategory" name="editProductCategory" required>
+                            <option value="">Chọn danh mục</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label for="editProductDescription">Mô tả</label>
+                        <textarea id="editProductDescription" name="editProductDescription"></textarea>
+                    </div>
+                </div>
+                <div class="form-row" style="grid-template-columns: auto auto 1fr; align-items: center;">
+                    <button type="submit" class="btn-primary">Lưu thay đổi</button>
+                    <button type="button" class="btn-secondary" id="cancelEditProduct">Hủy</button>
+                    <div id="editProductMessage" class="form-message"></div>
+                </div>
+            </form>
             <div id="productStatus" class="table-empty">Đang tải dữ liệu...</div>
             <table class="data-table" id="productTable" style="display: none;">
                 <thead>
@@ -205,6 +286,7 @@
                         <th>Tên</th>
                         <th>Mô tả</th>
                         <th>Danh mục</th>
+                        <th>Hành động</th>
                     </tr>
                 </thead>
                 <tbody id="productTableBody"></tbody>
@@ -215,9 +297,30 @@
     <script>
         const urlParams = new URLSearchParams(window.location.search);
         let token = urlParams.get('token') || localStorage.getItem('adminToken');
+        let cachedCategories = [];
+        let currentEditId = null;
+        let productMap = {};
+
+        function fillCategoryOptions(selectElement, categories, selectedId = '') {
+            if (!selectElement) return;
+            selectElement.innerHTML = categories
+                .map(
+                    (category) =>
+                        `<option value="${category._id}">${category.category_name}</option>`
+                )
+                .join('');
+            selectElement.insertAdjacentHTML(
+                'afterbegin',
+                '<option value="">Chọn danh mục</option>'
+            );
+            if (selectedId) {
+                selectElement.value = selectedId;
+            }
+        }
 
         async function fetchCategories() {
             const productCategorySelect = document.getElementById('productCategory');
+            const editCategorySelect = document.getElementById('editProductCategory');
             try {
                 const headers = {};
                 if (token) {
@@ -226,23 +329,17 @@
                 const response = await fetch('/api/category', { headers });
                 const data = await response.json();
                 const categories = (data.data && data.data.categories) || [];
-                if (productCategorySelect) {
-                    productCategorySelect.innerHTML = categories
-                        .map(
-                            (category) =>
-                                `<option value="${category._id}">${category.category_name}</option>`
-                        )
-                        .join('');
-                    productCategorySelect.insertAdjacentHTML(
-                        'afterbegin',
-                        '<option value="">Chọn danh mục</option>'
-                    );
-                }
+                cachedCategories = categories;
+                fillCategoryOptions(productCategorySelect, categories);
+                fillCategoryOptions(editCategorySelect, categories, editCategorySelect?.value || '');
                 return categories;
             } catch (error) {
                 console.error('Fetch categories error:', error);
                 if (productCategorySelect) {
                     productCategorySelect.innerHTML = '<option value="">Chọn danh mục</option>';
+                }
+                if (editCategorySelect) {
+                    editCategorySelect.innerHTML = '<option value="">Chọn danh mục</option>';
                 }
                 return [];
             }
@@ -281,8 +378,10 @@
                     return acc;
                 }, {});
 
+                productMap = {};
                 productTableBody.innerHTML = products
                     .map((product) => {
+                        productMap[String(product._id)] = product;
                         const categoryName =
                             categoryMap[String(product.category_id)] || product.category_id || '-';
                         const description = product.description || '';
@@ -292,6 +391,12 @@
                                 <td>${product.product_name || ''}</td>
                                 <td>${description}</td>
                                 <td>${categoryName}</td>
+                                <td>
+                                    <div class="table-actions">
+                                        <button class="btn-action btn-edit" data-id="${product._id}">Sửa</button>
+                                        <button class="btn-action btn-danger" data-id="${product._id}">Xóa</button>
+                                    </div>
+                                </td>
                             </tr>
                         `;
                     })
@@ -339,6 +444,63 @@
             }
         }
 
+        async function updateProduct(id, payload) {
+            const editProductMessage = document.getElementById('editProductMessage');
+            editProductMessage.textContent = '';
+            editProductMessage.className = 'form-message';
+
+            try {
+                const headers = { 'Content-Type': 'application/json' };
+                if (token) {
+                    headers['Authorization'] = 'Bearer ' + token;
+                }
+                const response = await fetch(`/api/product/${id}`, {
+                    method: 'PUT',
+                    headers,
+                    body: JSON.stringify(payload)
+                });
+                const data = await response.json();
+
+                if (!response.ok) {
+                    editProductMessage.textContent = data.error || 'Không thể cập nhật sản phẩm.';
+                    editProductMessage.classList.add('error');
+                    return false;
+                }
+
+                editProductMessage.textContent = 'Cập nhật sản phẩm thành công!';
+                editProductMessage.classList.add('success');
+                return true;
+            } catch (error) {
+                console.error('Update product error:', error);
+                editProductMessage.textContent = 'Lỗi cập nhật sản phẩm.';
+                editProductMessage.classList.add('error');
+                return false;
+            }
+        }
+
+        async function deleteProduct(id) {
+            try {
+                const headers = {};
+                if (token) {
+                    headers['Authorization'] = 'Bearer ' + token;
+                }
+                const response = await fetch(`/api/product/${id}`, {
+                    method: 'DELETE',
+                    headers
+                });
+                const data = await response.json();
+                if (!response.ok) {
+                    alert(data.error || 'Không thể xóa sản phẩm.');
+                    return false;
+                }
+                return true;
+            } catch (error) {
+                console.error('Delete product error:', error);
+                alert('Lỗi xóa sản phẩm.');
+                return false;
+            }
+        }
+
         const refreshProductsBtn = document.getElementById('refreshProducts');
         if (refreshProductsBtn) {
             refreshProductsBtn.addEventListener('click', async () => {
@@ -382,6 +544,96 @@
                     productCategorySelect.value = '';
                     const categories = await fetchCategories();
                     fetchProducts(categories);
+                }
+            });
+        }
+
+        const editProductForm = document.getElementById('editProductForm');
+        if (editProductForm) {
+            editProductForm.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                if (!currentEditId) {
+                    return;
+                }
+
+                const editProductCode = document.getElementById('editProductCode');
+                const editProductName = document.getElementById('editProductName');
+                const editProductCategory = document.getElementById('editProductCategory');
+                const editProductDescription = document.getElementById('editProductDescription');
+
+                const product_code = editProductCode.value.trim();
+                const product_name = editProductName.value.trim();
+                const category_id = editProductCategory.value;
+                const description = editProductDescription.value.trim();
+
+                if (!product_code || !product_name || !category_id) {
+                    const editProductMessage = document.getElementById('editProductMessage');
+                    editProductMessage.textContent = 'Vui lòng nhập đầy đủ thông tin.';
+                    editProductMessage.className = 'form-message error';
+                    return;
+                }
+
+                const updated = await updateProduct(currentEditId, {
+                    product_code,
+                    product_name,
+                    category_id,
+                    description
+                });
+
+                if (updated) {
+                    currentEditId = null;
+                    editProductForm.style.display = 'none';
+                    const categories = await fetchCategories();
+                    fetchProducts(categories);
+                }
+            });
+        }
+
+        const cancelEditProduct = document.getElementById('cancelEditProduct');
+        if (cancelEditProduct) {
+            cancelEditProduct.addEventListener('click', () => {
+                currentEditId = null;
+                editProductForm.style.display = 'none';
+                const editProductMessage = document.getElementById('editProductMessage');
+                editProductMessage.textContent = '';
+                editProductMessage.className = 'form-message';
+            });
+        }
+
+        const productTableBody = document.getElementById('productTableBody');
+        if (productTableBody) {
+            productTableBody.addEventListener('click', async (event) => {
+                const target = event.target;
+                if (!(target instanceof HTMLElement)) {
+                    return;
+                }
+                if (target.classList.contains('btn-edit')) {
+                    const id = target.getAttribute('data-id');
+                    if (!id || !productMap[id]) return;
+                    const product = productMap[id];
+                    currentEditId = id;
+                    const editProductCode = document.getElementById('editProductCode');
+                    const editProductName = document.getElementById('editProductName');
+                    const editProductCategory = document.getElementById('editProductCategory');
+                    const editProductDescription = document.getElementById('editProductDescription');
+                    editProductCode.value = product.product_code || '';
+                    editProductName.value = product.product_name || '';
+                    fillCategoryOptions(editProductCategory, cachedCategories, String(product.category_id || ''));
+                    editProductDescription.value = product.description || '';
+                    editProductForm.style.display = 'block';
+                    editProductForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+                if (target.classList.contains('btn-danger')) {
+                    const id = target.getAttribute('data-id');
+                    if (!id) return;
+                    if (!confirm('Bạn có chắc chắn muốn xóa sản phẩm này?')) {
+                        return;
+                    }
+                    const deleted = await deleteProduct(id);
+                    if (deleted) {
+                        const categories = await fetchCategories();
+                        fetchProducts(categories);
+                    }
                 }
             });
         }
