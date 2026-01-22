@@ -1,8 +1,8 @@
-import React, { useEffect } from 'react';
-import { StyleSheet, View, ActivityIndicator } from 'react-native';
-import { useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { getAuthToken } from '@/lib/auth';
+import React, { useEffect } from "react";
+import { StyleSheet, View, ActivityIndicator } from "react-native";
+import { useRouter } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { getAuthToken } from "@/lib/auth";
 
 export default function IndexScreen() {
   const router = useRouter();
@@ -16,14 +16,14 @@ export default function IndexScreen() {
       const token = await getAuthToken();
       if (token) {
         // Đã có token, chuyển đến home
-        router.replace('/home');
+        router.replace("/home");
       } else {
-        // Chưa có token (lần đầu), chuyển đến login
-        router.replace('/login');
+        // Chưa có token (lần đầu), chuyển đến welcome
+        router.replace("/welcome");
       }
     } catch (error) {
-      // Có lỗi, chuyển đến login
-      router.replace('/login');
+      // Có lỗi, chuyển đến welcome
+      router.replace("/welcome");
     }
   };
 
@@ -40,11 +40,11 @@ export default function IndexScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1A1A2E',
+    backgroundColor: "#000000",
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
 });

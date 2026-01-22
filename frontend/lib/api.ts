@@ -1,68 +1,48 @@
+import axios, { AxiosInstance, AxiosError, AxiosRequestConfig } from 'axios';
 import { API_BASE_URL } from '@/constants/api';
 import { Platform } from 'react-native';
+import { getAuthToken } from './auth';
 
 // Log API URL để debug
 console.log('[API Config] Platform:', Platform.OS);
 console.log('[API Config] API_BASE_URL:', API_BASE_URL);
 
-type LoginAppResponse = {
-  message?: string;
-  data?: { user: Record<string, unknown>; token: string };
-  error?: string;
-};
+// Tạo axios instance với cấu hình mặc định
+const apiClient: AxiosInstance = axios.create({
+  baseURL: API_BASE_URL,
+  timeout: 10000, // 10 giây
+  headers: {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+  },
+});
 
-export async function loginApp(email: string, pass: string) {
-  const url = `${API_BASE_URL}/api/account/login/app`;
-  
-  console.log('[API] Calling login endpoint:', url);
-  console.log('[API] Platform:', Platform.OS);
-  console.log('[API] Request body:', { email, pass: '***' });
-  
-  try {
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
-      body: JSON.stringify({ email, pass }),
-    });
+// Request interceptor: Thêm token vào header nếu có
+apiClient.interceptors.request.use(
+  async (config) => {
+    try {
+      const token = await getAuthToken();
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+    } catch (error) {
+      console.error('[API] Error getting auth token:', error);
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
 
-    console.log('[API] Response status:', res.status);
-    console.log('[API] Response headers:', res.headers);
-    
-    const json = (await res.json().catch((err) => {
-      console.error('[API] JSON parse error:', err);
-      return {};
-    })) as LoginAppResponse;
-    
-    console.log('[API] Response data:', json);
-    
-    if (!res.ok) {
-      const errorMsg = json.error || 'Đăng nhập thất bại';
-      console.error('[API] Login failed:', errorMsg, json);
-      throw new Error(errorMsg);
-    }
-    
-    if (!json.data?.token || !json.data?.user) {
-      console.error('[API] Invalid response:', json);
-      throw new Error('Phản hồi từ server không hợp lệ');
-    }
-    
-    console.log('[API] Login successful');
-    return json.data;
-  } catch (error) {
-    console.error('[API] Full error:', error);
-    
+// Response interceptor: Xử lý lỗi chung
+apiClient.interceptors.response.use(
+  (response) => {
+    return response;
+  },
+  (error: AxiosError) => {
     // Xử lý lỗi network
-    if (
-      error instanceof TypeError || 
-      (error instanceof Error && (
-        error.message.includes('fetch') || 
-        error.message.includes('Network request failed') ||
-        error.message.includes('Failed to connect')
-      ))
-    ) {
+    if (!error.response) {
       console.error('[API] Network error:', error);
       let networkErrorMsg = 'Không thể kết nối đến server. ';
       
@@ -78,10 +58,91 @@ export async function loginApp(email: string, pass: string) {
         networkErrorMsg += `Vui lòng kiểm tra URL: ${API_BASE_URL}`;
       }
       
-      throw new Error(networkErrorMsg);
+      return Promise.reject(new Error(networkErrorMsg));
+    }
+
+    // Xử lý lỗi từ server
+    const errorMessage = 
+      (error.response.data as { error?: string; message?: string })?.error ||
+      (error.response.data as { error?: string; message?: string })?.message ||
+      error.message ||
+      'Đã xảy ra lỗi';
+    
+    return Promise.reject(new Error(errorMessage));
+  }
+);
+
+// Export axios instance để sử dụng ở các nơi khác
+export { apiClient };
+
+type LoginAppResponse = {
+  message?: string;
+  data?: { user: Record<string, unknown>; token: string };
+  error?: string;
+};
+
+export async function loginApp(email: string, pass: string) {
+  const url = '/api/account/login/app';
+  
+  console.log('[API] Calling login endpoint:', url);
+  console.log('[API] Platform:', Platform.OS);
+  console.log('[API] Request body:', { email, pass: '***' });
+  
+  try {
+    const response = await apiClient.post<LoginAppResponse>(url, { email, pass });
+    
+    console.log('[API] Response status:', response.status);
+    console.log('[API] Response data:', response.data);
+    
+    const json = response.data;
+    
+    if (!json.data?.token || !json.data?.user) {
+      console.error('[API] Invalid response:', json);
+      throw new Error('Phản hồi từ server không hợp lệ');
     }
     
-    // Re-throw các lỗi khác
+    console.log('[API] Login successful');
+    return json.data;
+  } catch (error) {
+    console.error('[API] Full error:', error);
+    
+    // Re-throw error (đã được xử lý bởi interceptor)
+    throw error;
+  }
+}
+
+type RegisterAppResponse = {
+  message?: string;
+  data?: { user: Record<string, unknown>; token: string };
+  error?: string;
+};
+
+export async function registerApp(name: string, email: string, pass: string) {
+  const url = '/api/account/register';
+  
+  console.log('[API] Calling register endpoint:', url);
+  console.log('[API] Platform:', Platform.OS);
+  console.log('[API] Request body:', { name, email, pass: '***' });
+  
+  try {
+    const response = await apiClient.post<RegisterAppResponse>(url, { name, email, pass });
+    
+    console.log('[API] Response status:', response.status);
+    console.log('[API] Response data:', response.data);
+    
+    const json = response.data;
+    
+    if (!json.data?.token || !json.data?.user) {
+      console.error('[API] Invalid response:', json);
+      throw new Error('Phản hồi từ server không hợp lệ');
+    }
+    
+    console.log('[API] Register successful');
+    return json.data;
+  } catch (error) {
+    console.error('[API] Full error:', error);
+    
+    // Re-throw error (đã được xử lý bởi interceptor)
     throw error;
   }
 }
