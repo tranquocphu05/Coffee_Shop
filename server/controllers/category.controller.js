@@ -1,4 +1,6 @@
 const { categoryModel } = require("../models/category.model");
+const { productModel } = require("../models/product.model");
+const mongoose = require("mongoose");
 
 exports.createCategory = async (req, res) => {
   try {
@@ -43,6 +45,9 @@ exports.getCategories = async (req, res) => {
 exports.getCategoryById = async (req, res) => {
   try {
     const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ error: "Invalid category id" });
+    }
     const category = await categoryModel.findOne({ _id: id, is_delete: false });
 
     if (!category) {
@@ -59,6 +64,9 @@ exports.getCategoryById = async (req, res) => {
 exports.updateCategory = async (req, res) => {
   try {
     const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ error: "Invalid category id" });
+    }
     const { category_code, category_name, is_delete } = req.body;
 
     const category = await categoryModel.findOneAndUpdate(
@@ -87,15 +95,27 @@ exports.updateCategory = async (req, res) => {
 exports.deleteCategory = async (req, res) => {
   try {
     const { id } = req.params;
-    const category = await categoryModel.findOneAndUpdate(
-      { _id: id, is_delete: false },
-      { is_delete: true },
-      { new: true }
-    );
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ error: "Invalid category id" });
+    }
+
+    const hasProducts = await productModel.exists({
+      category_id: id,
+      is_delete: false,
+    });
+
+    if (hasProducts) {
+      return res.status(400).json({
+        error: "Danh mục đang có sản phẩm liên kết, không thể xóa",
+      });
+    }
+    const category = await categoryModel.findOne({ _id: id, is_delete: false });
 
     if (!category) {
       return res.status(404).json({ error: "Category not found" });
     }
+
+    await categoryModel.deleteOne({ _id: id });
 
     return res.status(200).json({
       message: "Delete category successfully!",
