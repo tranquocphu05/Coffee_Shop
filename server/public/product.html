@@ -5,6 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quản lý sản phẩm - Coffee Shop</title>
     <style>
+        :root {
+            color-scheme: dark;
+            --bg: #0b1020;
+            --surface: #0f172a;
+            --surface-2: #111b34;
+            --border: #1f2a44;
+            --text: #e5e7eb;
+            --muted: #a3adc2;
+            --accent: #3b82f6;
+            --accent-2: #1d4ed8;
+            --success: #22c55e;
+            --danger: #ef4444;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -12,47 +26,171 @@
         }
 
         body {
-            font-family: Arial, sans-serif;
-            background: #f5f5f5;
+            font-family: "Inter", Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
         }
 
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+        a {
+            color: inherit;
+        }
+
+        .app-shell {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 240px;
+            background: #0c1226;
+            border-right: 1px solid var(--border);
             padding: 20px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
         }
 
-        .header-content {
-            max-width: 1200px;
-            margin: 0 auto;
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 12px;
+            background: var(--accent);
+            display: grid;
+            place-items: center;
+            font-weight: bold;
+        }
+
+        .brand-title {
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        .brand-subtitle {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .nav {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            text-decoration: none;
+            color: var(--muted);
+            transition: all 0.2s ease;
+        }
+
+        .nav-item:hover {
+            background: rgba(59, 130, 246, 0.12);
+            color: var(--text);
+        }
+
+        .nav-item.active {
+            background: var(--surface-2);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .sidebar-footer {
+            margin-top: auto;
+        }
+
+        .btn-ghost {
+            width: 100%;
+            padding: 10px 14px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text);
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .btn-ghost:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .main-area {
+            flex: 1;
+            padding: 24px 32px;
+        }
+
+        .topbar {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 18px 22px;
+            margin-bottom: 20px;
         }
 
-        .btn-back {
-            padding: 8px 16px;
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-            border: 2px solid white;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: bold;
-            text-decoration: none;
+        .page-label {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--muted);
         }
 
-        .container {
-            max-width: 1200px;
-            margin: 30px auto;
-            padding: 0 20px;
+        .page-title {
+            font-size: 22px;
+            margin-top: 4px;
         }
 
-        .section-card {
-            background: white;
-            padding: 20px;
+        .page-description {
+            color: var(--muted);
+            margin-top: 6px;
+            font-size: 13px;
+        }
+
+        .search-box {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #0c142b;
+            border: 1px solid var(--border);
             border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 8px 12px;
+            min-width: 260px;
+        }
+
+        .search-box input {
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--text);
+            width: 100%;
+            font-size: 13px;
+        }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 360px;
+            gap: 20px;
+        }
+
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px 22px;
         }
 
         .section-actions {
@@ -64,17 +202,22 @@
 
         .btn-refresh {
             padding: 6px 12px;
-            border: 1px solid #667eea;
-            background: white;
-            color: #667eea;
-            border-radius: 4px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text);
+            border-radius: 8px;
             cursor: pointer;
             font-size: 12px;
         }
 
+        .btn-refresh:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
         .form-row {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
             gap: 12px;
             margin-top: 12px;
         }
@@ -86,18 +229,20 @@
         }
 
         .form-group label {
-            font-size: 13px;
-            color: #555;
-            font-weight: bold;
+            font-size: 12px;
+            color: var(--muted);
+            font-weight: 600;
         }
 
         .form-group input,
         .form-group select,
         .form-group textarea {
             padding: 8px 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
             font-size: 13px;
+            background: #0c142b;
+            color: var(--text);
         }
 
         .form-group textarea {
@@ -107,10 +252,10 @@
 
         .btn-primary {
             padding: 8px 14px;
-            background: #667eea;
+            background: var(--accent);
             color: white;
             border: none;
-            border-radius: 4px;
+            border-radius: 8px;
             cursor: pointer;
             font-size: 13px;
             font-weight: bold;
@@ -118,10 +263,10 @@
 
         .btn-secondary {
             padding: 8px 14px;
-            background: #f0f2ff;
-            color: #4b5bd4;
-            border: 1px solid #ccd4ff;
-            border-radius: 4px;
+            background: rgba(59, 130, 246, 0.12);
+            color: var(--text);
+            border: 1px solid var(--border);
+            border-radius: 8px;
             cursor: pointer;
             font-size: 13px;
             font-weight: bold;
@@ -129,10 +274,10 @@
 
         .btn-danger {
             padding: 6px 10px;
-            background: #ffefef;
-            color: #c33;
-            border: 1px solid #f5b3b3;
-            border-radius: 4px;
+            background: rgba(239, 68, 68, 0.16);
+            color: #fecaca;
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            border-radius: 6px;
             cursor: pointer;
             font-size: 12px;
             font-weight: bold;
@@ -140,7 +285,7 @@
 
         .btn-action {
             padding: 6px 10px;
-            border-radius: 4px;
+            border-radius: 6px;
             cursor: pointer;
             font-size: 12px;
             font-weight: bold;
@@ -148,9 +293,9 @@
         }
 
         .btn-edit {
-            background: #eef2ff;
-            color: #4150c8;
-            border-color: #c8d0ff;
+            background: rgba(59, 130, 246, 0.16);
+            color: #bfdbfe;
+            border-color: rgba(59, 130, 246, 0.4);
         }
 
         .table-actions {
@@ -162,26 +307,26 @@
         .edit-panel {
             margin-top: 20px;
             padding: 14px;
-            border: 1px dashed #ccd4ff;
-            border-radius: 8px;
-            background: #f8f9ff;
+            border: 1px dashed rgba(59, 130, 246, 0.5);
+            border-radius: 12px;
+            background: var(--surface-2);
         }
 
         .form-message {
             margin-top: 10px;
-            font-size: 13px;
+            font-size: 12px;
         }
 
         .form-message.error {
-            color: #c33;
+            color: #fecaca;
         }
 
         .form-message.success {
-            color: #2d9d5b;
+            color: #bbf7d0;
         }
 
         .table-empty {
-            color: #666;
+            color: var(--muted);
             margin-top: 10px;
         }
 
@@ -189,108 +334,194 @@
             width: 100%;
             border-collapse: collapse;
             margin-top: 15px;
-            font-size: 14px;
-            background: white;
+            font-size: 13px;
         }
 
         .data-table th,
         .data-table td {
-            border: 1px solid #e5e5e5;
+            border-bottom: 1px solid var(--border);
             padding: 10px;
             text-align: left;
         }
 
         .data-table th {
-            background: #f0f2ff;
-            color: #333;
+            color: var(--muted);
+            font-weight: 600;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+
+        .data-table tr:hover {
+            background: rgba(59, 130, 246, 0.08);
+        }
+
+        @media (max-width: 1100px) {
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 980px) {
+            .app-shell {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                flex-direction: row;
+                align-items: center;
+                flex-wrap: wrap;
+            }
+
+            .nav {
+                flex-direction: row;
+                flex-wrap: wrap;
+            }
+
+            .main-area {
+                padding: 16px;
+            }
+
+            .topbar {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+
+            .search-box {
+                width: 100%;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <div class="header-content">
-            <h1>☕ Quản lý sản phẩm</h1>
-            <a class="btn-back" href="/admin.html">Về trang Admin</a>
-        </div>
-    </div>
-
-    <div class="container">
-        <div class="section-card">
-            <div class="section-actions">
-                <h3>Danh sách sản phẩm</h3>
-                <button class="btn-refresh" id="refreshProducts">Tải lại</button>
+    <div class="app-shell">
+        <aside class="sidebar">
+            <div class="brand">
+                <div class="brand-avatar">CH</div>
+                <div>
+                    <div class="brand-title">Admin</div>
+                    <div class="brand-subtitle">Coffee_Shop</div>
+                </div>
             </div>
-            <form id="productForm">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="productCode">Mã sản phẩm</label>
-                        <input type="text" id="productCode" name="productCode" placeholder="VD: CF001" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="productName">Tên sản phẩm</label>
-                        <input type="text" id="productName" name="productName" placeholder="VD: Cà phê sữa" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="productCategory">Danh mục</label>
-                        <select id="productCategory" name="productCategory" required>
-                            <option value="">Chọn danh mục</option>
-                        </select>
-                    </div>
+            <nav class="nav">
+                <a class="nav-item" href="/admin.html">Trang chủ</a>
+                <a class="nav-item active" href="/product.html">Sản phẩm</a>
+                <a class="nav-item" href="/category.html">Danh mục</a>
+                <a class="nav-item" href="#">Đơn hàng</a>
+                <a class="nav-item" href="#">Khách hàng</a>
+                <a class="nav-item" href="#">Thống kê</a>
+                <a class="nav-item" href="#">Banner</a>
+            </nav>
+            <div class="sidebar-footer">
+                <a class="btn-ghost" href="/admin.html">Về trang Admin</a>
+            </div>
+        </aside>
+
+        <div class="main-area">
+            <header class="topbar">
+                <div>
+                    <div class="page-label">Bảng quản trị</div>
+                    <div class="page-title">Quản lý sản phẩm</div>
+                    <div class="page-description">Thêm, sửa, xóa và quản lý danh sách sản phẩm.</div>
                 </div>
-                <div class="form-row">
-                    <div class="form-group" style="grid-column: 1 / -1;">
-                        <label for="productDescription">Mô tả</label>
-                        <textarea id="productDescription" name="productDescription" placeholder="Mô tả sản phẩm"></textarea>
-                    </div>
+                <div class="search-box">
+                    <input type="text" placeholder="Tìm kiếm sản phẩm...">
                 </div>
-                <div class="form-row" style="grid-template-columns: auto 1fr; align-items: center;">
-                    <button type="submit" class="btn-primary">Thêm sản phẩm</button>
-                    <div id="productFormMessage" class="form-message"></div>
-                </div>
-            </form>
-            <form id="editProductForm" class="edit-panel" style="display: none;">
-                <h4>Chỉnh sửa sản phẩm</h4>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="editProductCode">Mã sản phẩm</label>
-                        <input type="text" id="editProductCode" name="editProductCode" required>
+            </header>
+
+            <div class="content-grid">
+                <section class="card">
+                    <div class="section-actions">
+                        <h3>Danh sách sản phẩm</h3>
+                        <button class="btn-refresh" id="refreshProducts">Tải lại</button>
                     </div>
-                    <div class="form-group">
-                        <label for="editProductName">Tên sản phẩm</label>
-                        <input type="text" id="editProductName" name="editProductName" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="editProductCategory">Danh mục</label>
-                        <select id="editProductCategory" name="editProductCategory" required>
-                            <option value="">Chọn danh mục</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group" style="grid-column: 1 / -1;">
-                        <label for="editProductDescription">Mô tả</label>
-                        <textarea id="editProductDescription" name="editProductDescription"></textarea>
-                    </div>
-                </div>
-                <div class="form-row" style="grid-template-columns: auto auto 1fr; align-items: center;">
-                    <button type="submit" class="btn-primary">Lưu thay đổi</button>
-                    <button type="button" class="btn-secondary" id="cancelEditProduct">Hủy</button>
-                    <div id="editProductMessage" class="form-message"></div>
-                </div>
-            </form>
-            <div id="productStatus" class="table-empty">Đang tải dữ liệu...</div>
-            <table class="data-table" id="productTable" style="display: none;">
-                <thead>
-                    <tr>
-                        <th>Mã</th>
-                        <th>Tên</th>
-                        <th>Mô tả</th>
-                        <th>Danh mục</th>
-                        <th>Hành động</th>
-                    </tr>
-                </thead>
-                <tbody id="productTableBody"></tbody>
-            </table>
+                    <div id="productStatus" class="table-empty">Đang tải dữ liệu...</div>
+                    <table class="data-table" id="productTable" style="display: none;">
+                        <thead>
+                            <tr>
+                                <th>Mã</th>
+                                <th>Tên</th>
+                                <th>Ảnh</th>
+                                <th>Mô tả</th>
+                                <th>Danh mục</th>
+                                <th>Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody id="productTableBody"></tbody>
+                    </table>
+                </section>
+
+                <section class="card">
+                    <h3>Thêm sản phẩm mới</h3>
+                    <form id="productForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="productCode">Mã sản phẩm</label>
+                                <input type="text" id="productCode" name="productCode" placeholder="VD: CF001" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="productName">Tên sản phẩm</label>
+                                <input type="text" id="productName" name="productName" placeholder="VD: Cà phê sữa" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="productCategory">Danh mục</label>
+                                <select id="productCategory" name="productCategory" required>
+                                    <option value="">Chọn danh mục</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="productImage">Ảnh sản phẩm</label>
+                                <input type="file" id="productImage" name="productImage" accept="image/*">
+                            </div>
+                            <div class="form-group" style="grid-column: 1 / -1;">
+                                <label for="productDescription">Mô tả</label>
+                                <textarea id="productDescription" name="productDescription" placeholder="Mô tả sản phẩm"></textarea>
+                            </div>
+                        </div>
+                        <div class="form-row" style="grid-template-columns: auto 1fr; align-items: center;">
+                            <button type="submit" class="btn-primary">Thêm sản phẩm</button>
+                            <div id="productFormMessage" class="form-message"></div>
+                        </div>
+                    </form>
+                    <form id="editProductForm" class="edit-panel" style="display: none;">
+                        <h4>Chỉnh sửa sản phẩm</h4>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="editProductCode">Mã sản phẩm</label>
+                                <input type="text" id="editProductCode" name="editProductCode" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="editProductName">Tên sản phẩm</label>
+                                <input type="text" id="editProductName" name="editProductName" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="editProductCategory">Danh mục</label>
+                                <select id="editProductCategory" name="editProductCategory" required>
+                                    <option value="">Chọn danh mục</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="editProductImage">Ảnh sản phẩm</label>
+                                <input type="file" id="editProductImage" name="editProductImage" accept="image/*">
+                            </div>
+                            <div class="form-group" style="grid-column: 1 / -1;">
+                                <label for="editProductDescription">Mô tả</label>
+                                <textarea id="editProductDescription" name="editProductDescription"></textarea>
+                            </div>
+                        </div>
+                        <div class="form-row" style="grid-template-columns: auto auto 1fr; align-items: center;">
+                            <button type="submit" class="btn-primary">Lưu thay đổi</button>
+                            <button type="button" class="btn-secondary" id="cancelEditProduct">Hủy</button>
+                            <div id="editProductMessage" class="form-message"></div>
+                        </div>
+                    </form>
+                </section>
+            </div>
         </div>
     </div>
 
@@ -385,10 +616,14 @@
                         const categoryName =
                             categoryMap[String(product.category_id)] || product.category_id || '-';
                         const description = product.description || '';
+                        const imageCell = product.image
+                            ? `<img src="/images/products/${product.image}" alt="${product.product_name || ''}" style="max-width: 60px; max-height: 60px; object-fit: cover;">`
+                            : '-';
                         return `
                             <tr>
                                 <td>${product.product_code || ''}</td>
                                 <td>${product.product_name || ''}</td>
+                                <td>${imageCell}</td>
                                 <td>${description}</td>
                                 <td>${categoryName}</td>
                                 <td>
@@ -430,16 +665,41 @@
                 if (!response.ok) {
                     productFormMessage.textContent = data.error || 'Không thể tạo sản phẩm.';
                     productFormMessage.classList.add('error');
-                    return false;
+                    return null;
                 }
 
                 productFormMessage.textContent = 'Thêm sản phẩm thành công!';
                 productFormMessage.classList.add('success');
-                return true;
+                return data.data && data.data.product ? data.data.product : null;
             } catch (error) {
                 console.error('Create product error:', error);
                 productFormMessage.textContent = 'Lỗi tạo sản phẩm.';
                 productFormMessage.classList.add('error');
+                return null;
+            }
+        }
+
+        async function uploadProductImage(id, file) {
+            try {
+                const formData = new FormData();
+                formData.append('image', file);
+                const headers = {};
+                if (token) {
+                    headers['Authorization'] = 'Bearer ' + token;
+                }
+                const response = await fetch(`/api/product/${id}/image`, {
+                    method: 'POST',
+                    headers,
+                    body: formData
+                });
+                const data = await response.json();
+                if (!response.ok) {
+                    throw new Error(data.error || 'Không thể tải ảnh sản phẩm.');
+                }
+                return true;
+            } catch (error) {
+                console.error('Upload product image error:', error);
+                alert(error.message || 'Lỗi tải ảnh sản phẩm.');
                 return false;
             }
         }
@@ -517,6 +777,7 @@
                 const productNameInput = document.getElementById('productName');
                 const productCategorySelect = document.getElementById('productCategory');
                 const productDescriptionInput = document.getElementById('productDescription');
+                const productImageInput = document.getElementById('productImage');
 
                 const product_code = productCodeInput.value.trim();
                 const product_name = productNameInput.value.trim();
@@ -530,18 +791,24 @@
                     return;
                 }
 
-                const created = await createProduct({
+                const createdProduct = await createProduct({
                     product_code,
                     product_name,
                     category_id,
                     description
                 });
 
-                if (created) {
+                if (createdProduct) {
+                    if (productImageInput && productImageInput.files && productImageInput.files[0]) {
+                        await uploadProductImage(createdProduct._id, productImageInput.files[0]);
+                    }
                     productCodeInput.value = '';
                     productNameInput.value = '';
                     productDescriptionInput.value = '';
                     productCategorySelect.value = '';
+                    if (productImageInput) {
+                        productImageInput.value = '';
+                    }
                     const categories = await fetchCategories();
                     fetchProducts(categories);
                 }
@@ -560,6 +827,7 @@
                 const editProductName = document.getElementById('editProductName');
                 const editProductCategory = document.getElementById('editProductCategory');
                 const editProductDescription = document.getElementById('editProductDescription');
+                const editProductImage = document.getElementById('editProductImage');
 
                 const product_code = editProductCode.value.trim();
                 const product_name = editProductName.value.trim();
@@ -581,6 +849,10 @@
                 });
 
                 if (updated) {
+                    if (editProductImage && editProductImage.files && editProductImage.files[0]) {
+                        await uploadProductImage(currentEditId, editProductImage.files[0]);
+                        editProductImage.value = '';
+                    }
                     currentEditId = null;
                     editProductForm.style.display = 'none';
                     const categories = await fetchCategories();
@@ -597,6 +869,10 @@
                 const editProductMessage = document.getElementById('editProductMessage');
                 editProductMessage.textContent = '';
                 editProductMessage.className = 'form-message';
+                const editProductImage = document.getElementById('editProductImage');
+                if (editProductImage) {
+                    editProductImage.value = '';
+                }
             });
         }
 

@@ -1,5 +1,20 @@
 const { productModel } = require("../models/product.model");
 const mongoose = require("mongoose");
+const path = require("path");
+const fs = require("fs");
+const { uploadFile } = require("../helpers/upload.helper");
+
+const removeProductImage = (fileName) => {
+  if (!fileName) return;
+  const imagePath = path.join(
+    __dirname,
+    "../public/images/products",
+    fileName
+  );
+  if (fs.existsSync(imagePath)) {
+    fs.unlinkSync(imagePath);
+  }
+};
 
 exports.createProduct = async (req, res) => {
   try {
@@ -135,10 +150,45 @@ exports.deleteProduct = async (req, res) => {
       return res.status(404).json({ error: "Product not found" });
     }
 
+    removeProductImage(product.image);
     await productModel.deleteOne({ _id: id });
 
     return res.status(200).json({
       message: "Delete product successfully!",
+      data: { product },
+    });
+  } catch (error) {
+    console.log(error.message);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+exports.uploadProductImage = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ error: "Invalid product id" });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ error: "No image uploaded" });
+    }
+
+    const product = await productModel.findOne({ _id: id, is_delete: false });
+    if (!product) {
+      return res.status(404).json({ error: "Product not found" });
+    }
+
+    const fileName = await uploadFile(req.file, "products");
+    const oldImage = product.image;
+    product.image = fileName;
+    await product.save();
+    if (oldImage && oldImage !== fileName) {
+      removeProductImage(oldImage);
+    }
+
+    return res.status(200).json({
+      message: "Upload product image successfully!",
       data: { product },
     });
   } catch (error) {
