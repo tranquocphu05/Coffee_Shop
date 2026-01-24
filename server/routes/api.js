@@ -5,7 +5,11 @@ var fs = require("fs");
 var multer = require("multer");
 var accCtrl = require("../controllers/acc.controller");
 var productCtrl = require("../controllers/product.controller");
+var productVariantCtrl = require("../controllers/product_variant.controller");
 var categoryCtrl = require("../controllers/category.controller");
+var orderCtrl = require("../controllers/order.controller");
+var cartCtrl = require("../controllers/cart.controller");
+var orderDetailCtrl = require("../controllers/order_detail.controller");
 var jwt = require("jsonwebtoken");
 var mdw = require("../middleware/api.auth");
 
@@ -36,7 +40,7 @@ var upload = multer({
   },
 });
 
-var uploadProductImage = (req, res, next) => {
+var uploadProductVariantImage = (req, res, next) => {
   upload.single("image")(req, res, function (err) {
     if (err) {
       return res.status(400).json({ error: err.message });
@@ -64,6 +68,38 @@ router.get("/product/:id", productCtrl.getProductById);
 router.post("/product", productCtrl.createProduct);
 router.put("/product/:id", productCtrl.updateProduct);
 router.delete("/product/:id", productCtrl.deleteProduct);
-router.post("/product/:id/image", uploadProductImage, productCtrl.uploadProductImage);
+
+// Product Variant
+router.get("/product-variant", productVariantCtrl.getProductVariants);
+router.get("/product-variant/:id", productVariantCtrl.getProductVariantById);
+router.post("/product-variant", productVariantCtrl.createProductVariant);
+router.put("/product-variant/:id", productVariantCtrl.updateProductVariant);
+router.delete("/product-variant/:id", productVariantCtrl.deleteProductVariant);
+router.post(
+  "/product-variant/:id/image",
+  uploadProductVariantImage,
+  productVariantCtrl.uploadProductVariantImage
+);
+
+// Order
+router.get("/order", orderCtrl.getOrders);
+router.get("/order/:id", orderCtrl.getOrderById);
+router.post("/order", orderCtrl.createOrder);
+router.put("/order/:id", orderCtrl.updateOrder);
+router.delete("/order/:id", orderCtrl.deleteOrder);
+
+// Cart
+router.get("/cart", cartCtrl.getCartItems);
+router.get("/cart/:id", cartCtrl.getCartItemById);
+router.post("/cart", cartCtrl.createCartItem);
+router.put("/cart/:id", cartCtrl.updateCartItem);
+router.delete("/cart/:id", cartCtrl.deleteCartItem);
+
+// Order Detail
+router.get("/order-detail", orderDetailCtrl.getOrderDetails);
+router.get("/order-detail/:id", orderDetailCtrl.getOrderDetailById);
+router.post("/order-detail", orderDetailCtrl.createOrderDetail);
+router.put("/order-detail/:id", orderDetailCtrl.updateOrderDetail);
+router.delete("/order-detail/:id", orderDetailCtrl.deleteOrderDetail);
 
 module.exports = router;

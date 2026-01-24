@@ -1,0 +1,22 @@
+const db = require("./db");
+
+const cartSchema = new db.mongoose.Schema(
+  {
+    user_id: {
+      type: db.mongoose.Schema.Types.ObjectId,
+      ref: "accModel",
+      required: true,
+    },
+    variants_id: {
+      type: db.mongoose.Schema.Types.ObjectId,
+      ref: "productVariantModel",
+      required: true,
+    },
+    quantity: { type: Number, default: 1 },
+    price: { type: Number, default: 0 },
+  },
+  { collection: "cart" }
+);
+
+const cartModel = db.mongoose.model("cartModel", cartSchema);
+module.exports = { cartModel };

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quản lý danh mục - Coffee Shop</title>
+    <title>Quản lý đơn hàng - Coffee Shop</title>
     <style>
         :root {
             color-scheme: dark;
@@ -214,7 +214,8 @@
             font-weight: 600;
         }
 
-        .form-group input {
+        .form-group input,
+        .form-group select {
             padding: 8px 10px;
             border: 1px solid var(--border);
             border-radius: 8px;
@@ -277,12 +278,47 @@
             flex-wrap: wrap;
         }
 
-        .edit-panel {
-            margin-top: 20px;
-            padding: 14px;
-            border: 1px dashed rgba(59, 130, 246, 0.5);
-            border-radius: 12px;
-            background: var(--surface-2);
+        .form-message {
+            margin-top: 10px;
+            font-size: 12px;
+        }
+
+        .form-message.error {
+            color: #fecaca;
+        }
+
+        .form-message.success {
+            color: #bbf7d0;
+        }
+
+        .table-empty {
+            color: var(--muted);
+            margin-top: 10px;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            font-size: 13px;
+        }
+
+        .data-table th,
+        .data-table td {
+            border-bottom: 1px solid var(--border);
+            padding: 10px;
+            text-align: left;
+        }
+
+        .data-table th {
+            color: var(--muted);
+            font-weight: 600;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+
+        .data-table tr:hover {
+            background: rgba(59, 130, 246, 0.08);
         }
 
         .modal {
@@ -307,7 +343,7 @@
         }
 
         .modal-content {
-            width: min(720px, 100%);
+            width: min(860px, 100%);
             max-height: 90vh;
             overflow: auto;
             background: var(--surface);
@@ -376,49 +412,6 @@
             transition: background-color 0.2s ease;
         }
 
-        .form-message {
-            margin-top: 10px;
-            font-size: 12px;
-        }
-
-        .form-message.error {
-            color: #fecaca;
-        }
-
-        .form-message.success {
-            color: #bbf7d0;
-        }
-
-        .table-empty {
-            color: var(--muted);
-            margin-top: 10px;
-        }
-
-        .data-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
-            font-size: 13px;
-        }
-
-        .data-table th,
-        .data-table td {
-            border-bottom: 1px solid var(--border);
-            padding: 10px;
-            text-align: left;
-        }
-
-        .data-table th {
-            color: var(--muted);
-            font-weight: 600;
-            font-size: 12px;
-            text-transform: uppercase;
-        }
-
-        .data-table tr:hover {
-            background: rgba(59, 130, 246, 0.08);
-        }
-
         @media (max-width: 1100px) {
             .content-grid {
                 grid-template-columns: 1fr;
@@ -474,8 +467,9 @@
             <nav class="nav">
                 <a class="nav-item" href="/admin.html">Trang chủ</a>
                 <a class="nav-item" href="/product.html">Sản phẩm</a>
-                <a class="nav-item active" href="/category.html">Danh mục</a>
-                <a class="nav-item" href="/order.html">Đơn hàng</a>
+                <a class="nav-item" href="/product-variant.html">Biến thể</a>
+                <a class="nav-item" href="/category.html">Danh mục</a>
+                <a class="nav-item active" href="/order.html">Đơn hàng</a>
                 <a class="nav-item" href="#">Khách hàng</a>
                 <a class="nav-item" href="#">Thống kê</a>
                 <a class="nav-item" href="#">Banner</a>
@@ -489,74 +483,60 @@
             <header class="topbar">
                 <div>
                     <div class="page-label">Bảng quản trị</div>
-                    <div class="page-title">Quản lý danh mục</div>
-                    <div class="page-description">Tạo mới, chỉnh sửa và quản lý danh mục sản phẩm.</div>
+                    <div class="page-title">Quản lý đơn hàng</div>
+                    <div class="page-description">Theo dõi và cập nhật trạng thái đơn hàng.</div>
                 </div>
             </header>
 
             <div class="content-grid">
                 <section class="card">
                     <div class="section-actions">
-                        <h3>Danh sách danh mục</h3>
-                        <button class="btn-refresh" id="refreshCategories">Tải lại</button>
+                        <h3>Danh sách đơn hàng</h3>
+                        <button class="btn-refresh" id="refreshOrders">Tải lại</button>
                     </div>
-                    <div id="categoryStatus" class="table-empty">Đang tải dữ liệu...</div>
-                    <table class="data-table" id="categoryTable" style="display: none;">
+                    <div id="orderStatus" class="table-empty">Đang tải dữ liệu...</div>
+                    <table class="data-table" id="orderTable" style="display: none;">
                         <thead>
                             <tr>
-                                <th>Mã danh mục</th>
-                                <th>Tên danh mục</th>
+                                <th>Người dùng</th>
+                                <th>Địa chỉ</th>
+                                <th>Trạng thái</th>
+                                <th>Tổng tiền</th>
                                 <th>Hành động</th>
                             </tr>
                         </thead>
-                        <tbody id="categoryTableBody"></tbody>
+                        <tbody id="orderTableBody"></tbody>
                     </table>
-                </section>
-
-                <section class="card">
-                    <h3>Thêm danh mục mới</h3>
-                    <form id="categoryForm">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="categoryCode">Mã danh mục</label>
-                                <input type="text" id="categoryCode" name="categoryCode" placeholder="VD: CF" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="categoryName">Tên danh mục</label>
-                                <input type="text" id="categoryName" name="categoryName" placeholder="VD: Cà phê" required>
-                            </div>
-                        </div>
-                        <div class="form-row" style="grid-template-columns: auto 1fr; align-items: center;">
-                            <button type="submit" class="btn-primary">Thêm danh mục</button>
-                            <div id="categoryFormMessage" class="form-message"></div>
-                        </div>
-                    </form>
                 </section>
             </div>
         </div>
     </div>
 
-    <div class="modal" id="editCategoryModal" aria-hidden="true">
+    <div class="modal" id="editOrderModal" aria-hidden="true">
         <div class="modal-content">
             <div class="modal-header">
-                <h4>Chỉnh sửa danh mục</h4>
-                <button type="button" class="modal-close" id="closeEditCategoryModal">&times;</button>
+                <h4>Chỉnh sửa đơn hàng</h4>
+                <button type="button" class="modal-close" id="closeEditOrderModal">&times;</button>
             </div>
-            <form id="editCategoryForm" class="edit-panel">
+            <form id="editOrderForm">
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="editCategoryCode">Mã danh mục</label>
-                        <input type="text" id="editCategoryCode" name="editCategoryCode" required>
+                        <label for="editOrderUserId">User ID</label>
+                        <input type="text" id="editOrderUserId" name="editOrderUserId" readonly>
                     </div>
                     <div class="form-group">
-                        <label for="editCategoryName">Tên danh mục</label>
-                        <input type="text" id="editCategoryName" name="editCategoryName" required>
+                        <label for="editOrderAddressId">Address ID</label>
+                        <input type="text" id="editOrderAddressId" name="editOrderAddressId" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label for="editOrderStatus">Trạng thái</label>
+                        <input type="text" id="editOrderStatus" name="editOrderStatus" required>
                     </div>
                 </div>
                 <div class="form-row" style="grid-template-columns: auto auto 1fr; align-items: center;">
                     <button type="submit" class="btn-primary">Lưu thay đổi</button>
-                    <button type="button" class="btn-secondary" id="cancelEditCategory">Hủy</button>
-                    <div id="editCategoryMessage" class="form-message"></div>
+                    <button type="button" class="btn-secondary" id="cancelEditOrder">Hủy</button>
+                    <div id="editOrderMessage" class="form-message"></div>
                 </div>
             </form>
         </div>
@@ -566,64 +546,67 @@
         const urlParams = new URLSearchParams(window.location.search);
         let token = urlParams.get('token') || localStorage.getItem('adminToken');
         let currentEditId = null;
-        let categoryMap = {};
-        const editCategoryModal = document.getElementById('editCategoryModal');
+        let orderMap = {};
+        const editOrderModal = document.getElementById('editOrderModal');
 
-        function openEditCategoryModal() {
-            if (!editCategoryModal) return;
-            editCategoryModal.classList.add('open');
-            editCategoryModal.setAttribute('aria-hidden', 'false');
+        function openEditOrderModal() {
+            if (!editOrderModal) return;
+            editOrderModal.classList.add('open');
+            editOrderModal.setAttribute('aria-hidden', 'false');
         }
 
-        function closeEditCategoryModal() {
-            if (!editCategoryModal) return;
-            editCategoryModal.classList.remove('open');
-            editCategoryModal.setAttribute('aria-hidden', 'true');
-            const editCategoryMessage = document.getElementById('editCategoryMessage');
-            editCategoryMessage.textContent = '';
-            editCategoryMessage.className = 'form-message';
+        function closeEditOrderModal() {
+            if (!editOrderModal) return;
+            editOrderModal.classList.remove('open');
+            editOrderModal.setAttribute('aria-hidden', 'true');
+            const editOrderMessage = document.getElementById('editOrderMessage');
+            editOrderMessage.textContent = '';
+            editOrderMessage.className = 'form-message';
         }
 
-        async function fetchCategories() {
-            const categoryStatus = document.getElementById('categoryStatus');
-            const categoryTable = document.getElementById('categoryTable');
-            const categoryTableBody = document.getElementById('categoryTableBody');
+        async function fetchOrders() {
+            const orderStatus = document.getElementById('orderStatus');
+            const orderTable = document.getElementById('orderTable');
+            const orderTableBody = document.getElementById('orderTableBody');
 
-            categoryStatus.textContent = 'Đang tải dữ liệu...';
-            categoryTable.style.display = 'none';
-            categoryTableBody.innerHTML = '';
+            orderStatus.textContent = 'Đang tải dữ liệu...';
+            orderTable.style.display = 'none';
+            orderTableBody.innerHTML = '';
 
             try {
                 const headers = {};
                 if (token) {
                     headers['Authorization'] = 'Bearer ' + token;
                 }
-                const response = await fetch('/api/category', { headers });
+                const response = await fetch('/api/order', { headers });
                 const data = await response.json();
 
                 if (!response.ok) {
-                    categoryStatus.textContent = data.error || 'Không thể tải danh mục.';
-                    return [];
+                    orderStatus.textContent = data.error || 'Không thể tải đơn hàng.';
+                    return;
                 }
 
-                const categories = (data.data && data.data.categories) || [];
-                if (categories.length === 0) {
-                    categoryStatus.textContent = 'Chưa có danh mục nào.';
-                    return [];
+                const orders = (data.data && data.data.orders) || [];
+                if (orders.length === 0) {
+                    orderStatus.textContent = 'Chưa có đơn hàng nào.';
+                    return;
                 }
 
-                categoryMap = {};
-                categoryTableBody.innerHTML = categories
-                    .map((category) => {
-                        categoryMap[String(category._id)] = category;
+                orderMap = {};
+                orderTableBody.innerHTML = orders
+                    .map((order) => {
+                        orderMap[String(order._id)] = order;
+                        const totalAmount = typeof order.total_amount === 'number' ? order.total_amount : '-';
                         return `
                             <tr>
-                                <td>${category.category_code || ''}</td>
-                                <td>${category.category_name || ''}</td>
+                                <td>${order.user_id || ''}</td>
+                                <td>${order.address_id || ''}</td>
+                                <td>${order.status || ''}</td>
+                                <td>${totalAmount}</td>
                                 <td>
                                     <div class="table-actions">
-                                        <button class="btn-action btn-edit" data-id="${category._id}">Sửa</button>
-                                        <button class="btn-action btn-danger" data-id="${category._id}">Xóa</button>
+                                        <button class="btn-action btn-edit" data-id="${order._id}">Sửa</button>
+                                        <button class="btn-action btn-danger" data-id="${order._id}">Xóa</button>
                                     </div>
                                 </td>
                             </tr>
@@ -631,61 +614,25 @@
                     })
                     .join('');
 
-                categoryStatus.textContent = '';
-                categoryTable.style.display = 'table';
-                return categories;
+                orderStatus.textContent = '';
+                orderTable.style.display = 'table';
             } catch (error) {
-                console.error('Fetch categories error:', error);
-                categoryStatus.textContent = 'Lỗi tải danh mục.';
-                return [];
+                console.error('Fetch orders error:', error);
+                orderStatus.textContent = 'Lỗi tải đơn hàng.';
             }
         }
 
-        async function createCategory(payload) {
-            const categoryFormMessage = document.getElementById('categoryFormMessage');
-            categoryFormMessage.textContent = '';
-            categoryFormMessage.className = 'form-message';
+        async function updateOrder(id, payload) {
+            const editOrderMessage = document.getElementById('editOrderMessage');
+            editOrderMessage.textContent = '';
+            editOrderMessage.className = 'form-message';
 
             try {
                 const headers = { 'Content-Type': 'application/json' };
                 if (token) {
                     headers['Authorization'] = 'Bearer ' + token;
                 }
-                const response = await fetch('/api/category', {
-                    method: 'POST',
-                    headers,
-                    body: JSON.stringify(payload)
-                });
-                const data = await response.json();
-
-                if (!response.ok) {
-                    categoryFormMessage.textContent = data.error || 'Không thể tạo danh mục.';
-                    categoryFormMessage.classList.add('error');
-                    return false;
-                }
-
-                categoryFormMessage.textContent = 'Thêm danh mục thành công!';
-                categoryFormMessage.classList.add('success');
-                return true;
-            } catch (error) {
-                console.error('Create category error:', error);
-                categoryFormMessage.textContent = 'Lỗi tạo danh mục.';
-                categoryFormMessage.classList.add('error');
-                return false;
-            }
-        }
-
-        async function updateCategory(id, payload) {
-            const editCategoryMessage = document.getElementById('editCategoryMessage');
-            editCategoryMessage.textContent = '';
-            editCategoryMessage.className = 'form-message';
-
-            try {
-                const headers = { 'Content-Type': 'application/json' };
-                if (token) {
-                    headers['Authorization'] = 'Bearer ' + token;
-                }
-                const response = await fetch(`/api/category/${id}`, {
+                const response = await fetch(`/api/order/${id}`, {
                     method: 'PUT',
                     headers,
                     body: JSON.stringify(payload)
@@ -693,173 +640,150 @@
                 const data = await response.json();
 
                 if (!response.ok) {
-                    editCategoryMessage.textContent = data.error || 'Không thể cập nhật danh mục.';
-                    editCategoryMessage.classList.add('error');
+                    editOrderMessage.textContent = data.error || 'Không thể cập nhật đơn hàng.';
+                    editOrderMessage.classList.add('error');
                     return false;
                 }
 
-                editCategoryMessage.textContent = 'Cập nhật danh mục thành công!';
-                editCategoryMessage.classList.add('success');
+                editOrderMessage.textContent = 'Cập nhật đơn hàng thành công!';
+                editOrderMessage.classList.add('success');
                 return true;
             } catch (error) {
-                console.error('Update category error:', error);
-                editCategoryMessage.textContent = 'Lỗi cập nhật danh mục.';
-                editCategoryMessage.classList.add('error');
+                console.error('Update order error:', error);
+                editOrderMessage.textContent = 'Lỗi cập nhật đơn hàng.';
+                editOrderMessage.classList.add('error');
                 return false;
             }
         }
 
-        async function deleteCategory(id) {
+        async function deleteOrder(id) {
             try {
                 const headers = {};
                 if (token) {
                     headers['Authorization'] = 'Bearer ' + token;
                 }
-                const response = await fetch(`/api/category/${id}`, {
+                const response = await fetch(`/api/order/${id}`, {
                     method: 'DELETE',
                     headers
                 });
                 const data = await response.json();
                 if (!response.ok) {
-                    alert(data.error || 'Không thể xóa danh mục.');
+                    alert(data.error || 'Không thể xóa đơn hàng.');
                     return false;
                 }
                 return true;
             } catch (error) {
-                console.error('Delete category error:', error);
-                alert('Lỗi xóa danh mục.');
+                console.error('Delete order error:', error);
+                alert('Lỗi xóa đơn hàng.');
                 return false;
             }
         }
 
-        const refreshCategoriesBtn = document.getElementById('refreshCategories');
-        if (refreshCategoriesBtn) {
-            refreshCategoriesBtn.addEventListener('click', fetchCategories);
+        const refreshOrdersBtn = document.getElementById('refreshOrders');
+        if (refreshOrdersBtn) {
+            refreshOrdersBtn.addEventListener('click', fetchOrders);
         }
 
-        const categoryForm = document.getElementById('categoryForm');
-        if (categoryForm) {
-            categoryForm.addEventListener('submit', async (event) => {
-                event.preventDefault();
-                const categoryCodeInput = document.getElementById('categoryCode');
-                const categoryNameInput = document.getElementById('categoryName');
-                const category_code = categoryCodeInput.value.trim();
-                const category_name = categoryNameInput.value.trim();
-
-                if (!category_code || !category_name) {
-                    const categoryFormMessage = document.getElementById('categoryFormMessage');
-                    categoryFormMessage.textContent = 'Vui lòng nhập đầy đủ thông tin.';
-                    categoryFormMessage.className = 'form-message error';
-                    return;
-                }
-
-                const created = await createCategory({ category_code, category_name });
-                if (created) {
-                    categoryCodeInput.value = '';
-                    categoryNameInput.value = '';
-                    fetchCategories();
-                }
-            });
-        }
-
-        const editCategoryForm = document.getElementById('editCategoryForm');
-        if (editCategoryForm) {
-            editCategoryForm.addEventListener('submit', async (event) => {
+        const editOrderForm = document.getElementById('editOrderForm');
+        if (editOrderForm) {
+            editOrderForm.addEventListener('submit', async (event) => {
                 event.preventDefault();
                 if (!currentEditId) {
                     return;
                 }
 
-                const editCategoryCode = document.getElementById('editCategoryCode');
-                const editCategoryName = document.getElementById('editCategoryName');
-                const category_code = editCategoryCode.value.trim();
-                const category_name = editCategoryName.value.trim();
+                const editOrderUserId = document.getElementById('editOrderUserId');
+                const editOrderAddressId = document.getElementById('editOrderAddressId');
+                const editOrderStatus = document.getElementById('editOrderStatus');
+                const user_id = editOrderUserId.value.trim();
+                const address_id = editOrderAddressId.value.trim();
+                const status = editOrderStatus.value.trim();
 
-                if (!category_code || !category_name) {
-                    const editCategoryMessage = document.getElementById('editCategoryMessage');
-                    editCategoryMessage.textContent = 'Vui lòng nhập đầy đủ thông tin.';
-                    editCategoryMessage.className = 'form-message error';
+                if (!user_id || !address_id || !status) {
+                    const editOrderMessage = document.getElementById('editOrderMessage');
+                    editOrderMessage.textContent = 'Vui lòng nhập đầy đủ thông tin.';
+                    editOrderMessage.className = 'form-message error';
                     return;
                 }
 
-                const updated = await updateCategory(currentEditId, {
-                    category_code,
-                    category_name
-                });
+                const payload = { status };
 
+                const updated = await updateOrder(currentEditId, payload);
                 if (updated) {
                     currentEditId = null;
-                    closeEditCategoryModal();
-                    fetchCategories();
+                    closeEditOrderModal();
+                    fetchOrders();
                 }
             });
         }
 
-        const cancelEditCategory = document.getElementById('cancelEditCategory');
-        if (cancelEditCategory) {
-            cancelEditCategory.addEventListener('click', () => {
+        const cancelEditOrder = document.getElementById('cancelEditOrder');
+        if (cancelEditOrder) {
+            cancelEditOrder.addEventListener('click', () => {
                 currentEditId = null;
-                closeEditCategoryModal();
+                closeEditOrderModal();
             });
         }
 
-        const closeEditCategoryModalBtn = document.getElementById('closeEditCategoryModal');
-        if (closeEditCategoryModalBtn) {
-            closeEditCategoryModalBtn.addEventListener('click', () => {
+        const closeEditOrderModalBtn = document.getElementById('closeEditOrderModal');
+        if (closeEditOrderModalBtn) {
+            closeEditOrderModalBtn.addEventListener('click', () => {
                 currentEditId = null;
-                closeEditCategoryModal();
+                closeEditOrderModal();
             });
         }
 
-        if (editCategoryModal) {
-            editCategoryModal.addEventListener('click', (event) => {
-                if (event.target === editCategoryModal) {
+        if (editOrderModal) {
+            editOrderModal.addEventListener('click', (event) => {
+                if (event.target === editOrderModal) {
                     currentEditId = null;
-                    closeEditCategoryModal();
+                    closeEditOrderModal();
                 }
             });
         }
 
         document.addEventListener('keydown', (event) => {
-            if (event.key === 'Escape' && editCategoryModal?.classList.contains('open')) {
+            if (event.key === 'Escape' && editOrderModal?.classList.contains('open')) {
                 currentEditId = null;
-                closeEditCategoryModal();
+                closeEditOrderModal();
             }
         });
 
-        const categoryTableBody = document.getElementById('categoryTableBody');
-        if (categoryTableBody) {
-            categoryTableBody.addEventListener('click', async (event) => {
+        const orderTableBody = document.getElementById('orderTableBody');
+        if (orderTableBody) {
+            orderTableBody.addEventListener('click', async (event) => {
                 const target = event.target;
                 if (!(target instanceof HTMLElement)) {
                     return;
                 }
                 if (target.classList.contains('btn-edit')) {
                     const id = target.getAttribute('data-id');
-                    if (!id || !categoryMap[id]) return;
-                    const category = categoryMap[id];
+                    if (!id || !orderMap[id]) return;
+                    const order = orderMap[id];
                     currentEditId = id;
-                    const editCategoryCode = document.getElementById('editCategoryCode');
-                    const editCategoryName = document.getElementById('editCategoryName');
-                    editCategoryCode.value = category.category_code || '';
-                    editCategoryName.value = category.category_name || '';
-                    openEditCategoryModal();
+                    const editOrderUserId = document.getElementById('editOrderUserId');
+                    const editOrderAddressId = document.getElementById('editOrderAddressId');
+                    const editOrderStatus = document.getElementById('editOrderStatus');
+                    editOrderUserId.value = order.user_id || '';
+                    editOrderAddressId.value = order.address_id || '';
+                    editOrderStatus.value = order.status || '';
+                    openEditOrderModal();
                 }
                 if (target.classList.contains('btn-danger')) {
                     const id = target.getAttribute('data-id');
                     if (!id) return;
-                    if (!confirm('Bạn có chắc chắn muốn xóa danh mục này?')) {
+                    if (!confirm('Bạn có chắc chắn muốn xóa đơn hàng này?')) {
                         return;
                     }
-                    const deleted = await deleteCategory(id);
+                    const deleted = await deleteOrder(id);
                     if (deleted) {
-                        fetchCategories();
+                        fetchOrders();
                     }
                 }
             });
         }
 
-        fetchCategories();
+        fetchOrders();
     </script>
 </body>
 </html>
