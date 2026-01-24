@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý biến thể sản phẩm - Coffee Shop</title>
+    <style>
+        :root {
+            color-scheme: dark;
+            --bg: #0b1020;
+            --surface: #0f172a;
+            --surface-2: #111b34;
+            --border: #1f2a44;
+            --text: #e5e7eb;
+            --muted: #a3adc2;
+            --accent: #3b82f6;
+            --accent-2: #1d4ed8;
+            --success: #22c55e;
+            --danger: #ef4444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Inter", Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        a {
+            color: inherit;
+        }
+
+        .app-shell {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 240px;
+            background: #0c1226;
+            border-right: 1px solid var(--border);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 12px;
+            background: var(--accent);
+            display: grid;
+            place-items: center;
+            font-weight: bold;
+        }
+
+        .brand-title {
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        .brand-subtitle {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .nav {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            text-decoration: none;
+            color: var(--muted);
+            transition: all 0.2s ease;
+        }
+
+        .nav-item:hover {
+            background: rgba(59, 130, 246, 0.12);
+            color: var(--text);
+        }
+
+        .nav-item.active {
+            background: var(--surface-2);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .sidebar-footer {
+            margin-top: auto;
+        }
+
+        .btn-ghost {
+            width: 100%;
+            padding: 10px 14px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text);
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .btn-ghost:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .main-area {
+            flex: 1;
+            padding: 24px 32px;
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 18px 22px;
+            margin-bottom: 20px;
+        }
+
+        .page-label {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--muted);
+        }
+
+        .page-title {
+            font-size: 22px;
+            margin-top: 4px;
+        }
+
+        .page-description {
+            color: var(--muted);
+            margin-top: 6px;
+            font-size: 13px;
+        }
+
+        .search-box {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #0c142b;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 8px 12px;
+            min-width: 260px;
+        }
+
+        .search-box input {
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--text);
+            width: 100%;
+            font-size: 13px;
+        }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 360px;
+            gap: 20px;
+        }
+
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px 22px;
+        }
+
+        .section-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-refresh {
+            padding: 6px 12px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .btn-refresh:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-group label {
+            font-size: 12px;
+            color: var(--muted);
+            font-weight: 600;
+        }
+
+        .form-group input,
+        .form-group select {
+            padding: 8px 10px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 13px;
+            background: #0c142b;
+            color: var(--text);
+        }
+
+        .btn-primary {
+            padding: 8px 14px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        .btn-secondary {
+            padding: 8px 14px;
+            background: rgba(59, 130, 246, 0.12);
+            color: var(--text);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        .btn-danger {
+            padding: 6px 10px;
+            background: rgba(239, 68, 68, 0.16);
+            color: #fecaca;
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .btn-action {
+            padding: 6px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            border: 1px solid transparent;
+        }
+
+        .btn-edit {
+            background: rgba(59, 130, 246, 0.16);
+            color: #bfdbfe;
+            border-color: rgba(59, 130, 246, 0.4);
+        }
+
+        .table-actions {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .edit-panel {
+            margin-top: 20px;
+            padding: 14px;
+            border: 1px dashed rgba(59, 130, 246, 0.5);
+            border-radius: 12px;
+            background: var(--surface-2);
+        }
+
+        .modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: opacity 0.2s ease, visibility 0.2s ease;
+        }
+
+        .modal.open {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+        }
+
+        .modal-content {
+            width: min(860px, 100%);
+            max-height: 90vh;
+            overflow: auto;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 18px 20px;
+            transform: translateY(8px);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35);
+        }
+
+        .modal.open .modal-content {
+            transform: translateY(0);
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .modal-close {
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--muted);
+            border-radius: 8px;
+            padding: 4px 10px;
+            cursor: pointer;
+            font-size: 16px;
+            line-height: 1;
+        }
+
+        .modal-close:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .nav-item,
+        .btn-ghost,
+        .btn-refresh,
+        .btn-primary,
+        .btn-secondary,
+        .btn-danger,
+        .btn-action,
+        .card {
+            transition: background-color 0.2s ease, color 0.2s ease,
+                border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.25);
+        }
+
+        .btn-primary:hover,
+        .btn-secondary:hover,
+        .btn-refresh:hover,
+        .btn-ghost:hover,
+        .btn-action:hover,
+        .nav-item:hover {
+            transform: translateY(-1px);
+        }
+
+        .data-table tr {
+            transition: background-color 0.2s ease;
+        }
+
+        .form-message {
+            margin-top: 10px;
+            font-size: 12px;
+        }
+
+        .form-message.error {
+            color: #fecaca;
+        }
+
+        .form-message.success {
+            color: #bbf7d0;
+        }
+
+        .table-empty {
+            color: var(--muted);
+            margin-top: 10px;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            font-size: 13px;
+        }
+
+        .data-table th,
+        .data-table td {
+            border-bottom: 1px solid var(--border);
+            padding: 10px;
+            text-align: left;
+        }
+
+        .data-table th {
+            color: var(--muted);
+            font-weight: 600;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+
+        .data-table tr:hover {
+            background: rgba(59, 130, 246, 0.08);
+        }
+
+        @media (max-width: 1100px) {
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 980px) {
+            .app-shell {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                flex-direction: row;
+                align-items: center;
+                flex-wrap: wrap;
+            }
+
+            .nav {
+                flex-direction: row;
+                flex-wrap: wrap;
+            }
+
+            .main-area {
+                padding: 16px;
+            }
+
+            .topbar {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+
+            .search-box {
+                width: 100%;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation: none !important;
+                transition: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-shell">
+        <aside class="sidebar">
+            <div class="brand">
+                <div class="brand-avatar">CH</div>
+                <div>
+                    <div class="brand-title">Admin</div>
+                    <div class="brand-subtitle">Coffee_Shop</div>
+                </div>
+            </div>
+            <nav class="nav">
+                <a class="nav-item" href="/admin.html">Trang chủ</a>
+                <a class="nav-item" href="/product.html">Sản phẩm</a>
+                <a class="nav-item active" href="/product-variant.html">Biến thể</a>
+                <a class="nav-item" href="/category.html">Danh mục</a>
+                <a class="nav-item" href="/order.html">Đơn hàng</a>
+                <a class="nav-item" href="#">Khách hàng</a>
+                <a class="nav-item" href="#">Thống kê</a>
+                <a class="nav-item" href="#">Banner</a>
+            </nav>
+            <div class="sidebar-footer">
+                <a class="btn-ghost" href="/admin.html">Về trang Admin</a>
+            </div>
+        </aside>
+
+        <div class="main-area">
+            <header class="topbar">
+                <div>
+                    <div class="page-label">Bảng quản trị</div>
+                    <div class="page-title">Quản lý biến thể sản phẩm</div>
+                    <div class="page-description">Thêm, sửa, xóa và quản lý các biến thể của sản phẩm.</div>
+                </div>
+                <div class="search-box">
+                    <input type="text" placeholder="Tìm kiếm biến thể...">
+                </div>
+            </header>
+
+            <div class="content-grid">
+                <section class="card">
+                    <div class="section-actions">
+                        <h3>Danh sách biến thể</h3>
+                        <button class="btn-refresh" id="refreshVariants">Tải lại</button>
+                    </div>
+                    <div id="variantStatus" class="table-empty">Đang tải dữ liệu...</div>
+                    <table class="data-table" id="variantTable" style="display: none;">
+                        <thead>
+                            <tr>
+                                <th>SKU</th>
+                                <th>Sản phẩm</th>
+                                <th>Size</th>
+                                <th>SL</th>
+                                <th>Giá</th>
+                                <th>Ảnh</th>
+                                <th>Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody id="variantTableBody"></tbody>
+                    </table>
+                </section>
+
+                <section class="card">
+                    <h3>Thêm biến thể mới</h3>
+                    <form id="variantForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="variantSku">SKU</label>
+                                <input type="text" id="variantSku" name="variantSku" placeholder="VD: CF-S-01" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="variantProduct">Sản phẩm</label>
+                                <select id="variantProduct" name="variantProduct" required>
+                                    <option value="">Chọn sản phẩm</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="variantSize">Size</label>
+                                <input type="text" id="variantSize" name="variantSize" placeholder="VD: S/M/L">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="variantQuantity">Số lượng</label>
+                                <input type="number" id="variantQuantity" name="variantQuantity" min="0" step="1" placeholder="VD: 10">
+                            </div>
+                            <div class="form-group">
+                                <label for="variantPrice">Giá</label>
+                                <input type="number" id="variantPrice" name="variantPrice" min="0" step="1000" placeholder="VD: 25000">
+                            </div>
+                            <div class="form-group">
+                                <label for="variantImage">Ảnh biến thể</label>
+                                <input type="file" id="variantImage" name="variantImage" accept="image/*">
+                            </div>
+                        </div>
+                        <div class="form-row" style="grid-template-columns: auto 1fr; align-items: center;">
+                            <button type="submit" class="btn-primary">Thêm biến thể</button>
+                            <div id="variantFormMessage" class="form-message"></div>
+                        </div>
+                    </form>
+
+                </section>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="editVariantModal" aria-hidden="true">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4>Chỉnh sửa biến thể</h4>
+                <button type="button" class="modal-close" id="closeEditVariantModal">&times;</button>
+            </div>
+            <form id="editVariantForm" class="edit-panel">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="editVariantSku">SKU</label>
+                        <input type="text" id="editVariantSku" name="editVariantSku" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editVariantProduct">Sản phẩm</label>
+                        <select id="editVariantProduct" name="editVariantProduct" required>
+                            <option value="">Chọn sản phẩm</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="editVariantSize">Size</label>
+                        <input type="text" id="editVariantSize" name="editVariantSize">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="editVariantQuantity">Số lượng</label>
+                        <input type="number" id="editVariantQuantity" name="editVariantQuantity" min="0" step="1">
+                    </div>
+                    <div class="form-group">
+                        <label for="editVariantPrice">Giá</label>
+                        <input type="number" id="editVariantPrice" name="editVariantPrice" min="0" step="1000">
+                    </div>
+                    <div class="form-group">
+                        <label for="editVariantImage">Ảnh biến thể</label>
+                        <input type="file" id="editVariantImage" name="editVariantImage" accept="image/*">
+                    </div>
+                </div>
+                <div class="form-row" style="grid-template-columns: auto auto 1fr; align-items: center;">
+                    <button type="submit" class="btn-primary">Lưu thay đổi</button>
+                    <button type="button" class="btn-secondary" id="cancelEditVariant">Hủy</button>
+                    <div id="editVariantMessage" class="form-message"></div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        let token = urlParams.get('token') || localStorage.getItem('adminToken');
+        let cachedProducts = [];
+        let currentEditId = null;
+        let variantMap = {};
+        const editVariantModal = document.getElementById('editVariantModal');
+
+        function openEditVariantModal() {
+            if (!editVariantModal) return;
+            editVariantModal.classList.add('open');
+            editVariantModal.setAttribute('aria-hidden', 'false');
+        }
+
+        function closeEditVariantModal() {
+            if (!editVariantModal) return;
+            editVariantModal.classList.remove('open');
+            editVariantModal.setAttribute('aria-hidden', 'true');
+            const editVariantMessage = document.getElementById('editVariantMessage');
+            editVariantMessage.textContent = '';
+            editVariantMessage.className = 'form-message';
+        }
+
+        function fillProductOptions(selectElement, products, selectedId = '') {
+            if (!selectElement) return;
+            selectElement.innerHTML = products
+                .map(
+                    (product) =>
+                        `<option value="${product._id}">${product.product_name}</option>`
+                )
+                .join('');
+            selectElement.insertAdjacentHTML(
+                'afterbegin',
+                '<option value="">Chọn sản phẩm</option>'
+            );
+            if (selectedId) {
+                selectElement.value = selectedId;
+            }
+        }
+
+        async function fetchProducts() {
+            const productSelect = document.getElementById('variantProduct');
+            const editProductSelect = document.getElementById('editVariantProduct');
+            try {
+                const headers = {};
+                if (token) {
+                    headers['Authorization'] = 'Bearer ' + token;
+                }
+                const response = await fetch('/api/product', { headers });
+                const data = await response.json();
+                const products = (data.data && data.data.products) || [];
+                cachedProducts = products;
+                fillProductOptions(productSelect, products);
+                fillProductOptions(editProductSelect, products, editProductSelect?.value || '');
+                return products;
+            } catch (error) {
+                console.error('Fetch products error:', error);
+                if (productSelect) {
+                    productSelect.innerHTML = '<option value="">Chọn sản phẩm</option>';
+                }
+                if (editProductSelect) {
+                    editProductSelect.innerHTML = '<option value="">Chọn sản phẩm</option>';
+                }
+                return [];
+            }
+        }
+
+        async function fetchVariants(products = []) {
+            const variantStatus = document.getElementById('variantStatus');
+            const variantTable = document.getElementById('variantTable');
+            const variantTableBody = document.getElementById('variantTableBody');
+
+            variantStatus.textContent = 'Đang tải dữ liệu...';
+            variantTable.style.display = 'none';
+            variantTableBody.innerHTML = '';
+
+            try {
+                const headers = {};
+                if (token) {
+                    headers['Authorization'] = 'Bearer ' + token;
+                }
+                const response = await fetch('/api/product-variant', { headers });
+                const data = await response.json();
+
+                if (!response.ok) {
+                    variantStatus.textContent = data.error || 'Không thể tải biến thể.';
+                    return;
+                }
+
+                const variants = (data.data && data.data.variants) || [];
+                if (variants.length === 0) {
+                    variantStatus.textContent = 'Chưa có biến thể nào.';
+                    return;
+                }
+
+                const productMap = products.reduce((acc, product) => {
+                    acc[String(product._id)] = product.product_name;
+                    return acc;
+                }, {});
+
+                variantMap = {};
+                variantTableBody.innerHTML = variants
+                    .map((variant) => {
+                        variantMap[String(variant._id)] = variant;
+                        const productName =
+                            productMap[String(variant.product_id)] || variant.product_id || '-';
+                        const imageCell = variant.image
+                            ? `<img src="/images/product_variants/${variant.image}" alt="${variant.sku || ''}" style="max-width: 60px; max-height: 60px; object-fit: cover;">`
+                            : '-';
+                        return `
+                            <tr>
+                                <td>${variant.sku || ''}</td>
+                                <td>${productName}</td>
+                                <td>${variant.size || '-'}</td>
+                                <td>${typeof variant.quantity === 'number' ? variant.quantity : '-'}</td>
+                                <td>${typeof variant.price === 'number' ? variant.price : '-'}</td>
+                                <td>${imageCell}</td>
+                                <td>
+                                    <div class="table-actions">
+                                        <button class="btn-action btn-edit" data-id="${variant._id}">Sửa</button>
+                                        <button class="btn-action btn-danger" data-id="${variant._id}">Xóa</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        `;
+                    })
+                    .join('');
+
+                variantStatus.textContent = '';
+                variantTable.style.display = 'table';
+            } catch (error) {
+                console.error('Fetch variants error:', error);
+                variantStatus.textContent = 'Lỗi tải biến thể.';
+            }
+        }
+
+        async function createVariant(payload) {
+            const variantFormMessage = document.getElementById('variantFormMessage');
+            variantFormMessage.textContent = '';
+            variantFormMessage.className = 'form-message';
+
+            try {
+                const headers = { 'Content-Type': 'application/json' };
+                if (token) {
+                    headers['Authorization'] = 'Bearer ' + token;
+                }
+                const response = await fetch('/api/product-variant', {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify(payload)
+                });
+                const data = await response.json();
+
+                if (!response.ok) {
+                    variantFormMessage.textContent = data.error || 'Không thể tạo biến thể.';
+                    variantFormMessage.classList.add('error');
+                    return null;
+                }
+
+                variantFormMessage.textContent = 'Thêm biến thể thành công!';
+                variantFormMessage.classList.add('success');
+                return data.data && data.data.variant ? data.data.variant : null;
+            } catch (error) {
+                console.error('Create variant error:', error);
+                variantFormMessage.textContent = 'Lỗi tạo biến thể.';
+                variantFormMessage.classList.add('error');
+                return null;
+            }
+        }
+
+        async function uploadVariantImage(id, file) {
+            try {
+                const formData = new FormData();
+                formData.append('image', file);
+                const headers = {};
+                if (token) {
+                    headers['Authorization'] = 'Bearer ' + token;
+                }
+                const response = await fetch(`/api/product-variant/${id}/image`, {
+                    method: 'POST',
+                    headers,
+                    body: formData
+                });
+                const data = await response.json();
+                if (!response.ok) {
+                    throw new Error(data.error || 'Không thể tải ảnh biến thể.');
+                }
+                return true;
+            } catch (error) {
+                console.error('Upload variant image error:', error);
+                alert(error.message || 'Lỗi tải ảnh biến thể.');
+                return false;
+            }
+        }
+
+        async function updateVariant(id, payload) {
+            const editVariantMessage = document.getElementById('editVariantMessage');
+            editVariantMessage.textContent = '';
+            editVariantMessage.className = 'form-message';
+
+            try {
+                const headers = { 'Content-Type': 'application/json' };
+                if (token) {
+                    headers['Authorization'] = 'Bearer ' + token;
+                }
+                const response = await fetch(`/api/product-variant/${id}`, {
+                    method: 'PUT',
+                    headers,
+                    body: JSON.stringify(payload)
+                });
+                const data = await response.json();
+
+                if (!response.ok) {
+                    editVariantMessage.textContent = data.error || 'Không thể cập nhật biến thể.';
+                    editVariantMessage.classList.add('error');
+                    return false;
+                }
+
+                editVariantMessage.textContent = 'Cập nhật biến thể thành công!';
+                editVariantMessage.classList.add('success');
+                return true;
+            } catch (error) {
+                console.error('Update variant error:', error);
+                editVariantMessage.textContent = 'Lỗi cập nhật biến thể.';
+                editVariantMessage.classList.add('error');
+                return false;
+            }
+        }
+
+        async function deleteVariant(id) {
+            try {
+                const headers = {};
+                if (token) {
+                    headers['Authorization'] = 'Bearer ' + token;
+                }
+                const response = await fetch(`/api/product-variant/${id}`, {
+                    method: 'DELETE',
+                    headers
+                });
+                const data = await response.json();
+                if (!response.ok) {
+                    alert(data.error || 'Không thể xóa biến thể.');
+                    return false;
+                }
+                return true;
+            } catch (error) {
+                console.error('Delete variant error:', error);
+                alert('Lỗi xóa biến thể.');
+                return false;
+            }
+        }
+
+        const refreshVariantsBtn = document.getElementById('refreshVariants');
+        if (refreshVariantsBtn) {
+            refreshVariantsBtn.addEventListener('click', async () => {
+                const products = await fetchProducts();
+                fetchVariants(products);
+            });
+        }
+
+        const variantForm = document.getElementById('variantForm');
+        if (variantForm) {
+            variantForm.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                const variantSkuInput = document.getElementById('variantSku');
+                const variantProductSelect = document.getElementById('variantProduct');
+                const variantSizeInput = document.getElementById('variantSize');
+                const variantQuantityInput = document.getElementById('variantQuantity');
+                const variantPriceInput = document.getElementById('variantPrice');
+                const variantImageInput = document.getElementById('variantImage');
+
+                const sku = variantSkuInput.value.trim();
+                const product_id = variantProductSelect.value;
+                const size = variantSizeInput.value.trim();
+                const quantityValue = variantQuantityInput.value.trim();
+                const priceValue = variantPriceInput.value.trim();
+
+                if (!sku || !product_id) {
+                    const variantFormMessage = document.getElementById('variantFormMessage');
+                    variantFormMessage.textContent = 'Vui lòng nhập đầy đủ thông tin.';
+                    variantFormMessage.className = 'form-message error';
+                    return;
+                }
+
+                const payload = { sku, product_id };
+                if (size) payload.size = size;
+                if (quantityValue !== '') payload.quantity = Number.parseInt(quantityValue, 10);
+                if (priceValue !== '') payload.price = Number.parseFloat(priceValue);
+
+                const createdVariant = await createVariant(payload);
+
+                if (createdVariant) {
+                    if (variantImageInput && variantImageInput.files && variantImageInput.files[0]) {
+                        await uploadVariantImage(createdVariant._id, variantImageInput.files[0]);
+                    }
+                    variantSkuInput.value = '';
+                    variantProductSelect.value = '';
+                    variantSizeInput.value = '';
+                    variantQuantityInput.value = '';
+                    variantPriceInput.value = '';
+                    if (variantImageInput) {
+                        variantImageInput.value = '';
+                    }
+                    const products = await fetchProducts();
+                    fetchVariants(products);
+                }
+            });
+        }
+
+        const editVariantForm = document.getElementById('editVariantForm');
+        if (editVariantForm) {
+            editVariantForm.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                if (!currentEditId) {
+                    return;
+                }
+
+                const editVariantSku = document.getElementById('editVariantSku');
+                const editVariantProduct = document.getElementById('editVariantProduct');
+                const editVariantSize = document.getElementById('editVariantSize');
+                const editVariantQuantity = document.getElementById('editVariantQuantity');
+                const editVariantPrice = document.getElementById('editVariantPrice');
+                const editVariantImage = document.getElementById('editVariantImage');
+
+                const sku = editVariantSku.value.trim();
+                const product_id = editVariantProduct.value;
+                const size = editVariantSize.value.trim();
+                const quantityValue = editVariantQuantity.value.trim();
+                const priceValue = editVariantPrice.value.trim();
+
+                if (!sku || !product_id) {
+                    const editVariantMessage = document.getElementById('editVariantMessage');
+                    editVariantMessage.textContent = 'Vui lòng nhập đầy đủ thông tin.';
+                    editVariantMessage.className = 'form-message error';
+                    return;
+                }
+
+                const payload = { sku, product_id };
+                if (size) payload.size = size;
+                if (quantityValue !== '') payload.quantity = Number.parseInt(quantityValue, 10);
+                if (priceValue !== '') payload.price = Number.parseFloat(priceValue);
+
+                const updated = await updateVariant(currentEditId, payload);
+
+                if (updated) {
+                    if (editVariantImage && editVariantImage.files && editVariantImage.files[0]) {
+                        await uploadVariantImage(currentEditId, editVariantImage.files[0]);
+                        editVariantImage.value = '';
+                    }
+                    currentEditId = null;
+                    closeEditVariantModal();
+                    const products = await fetchProducts();
+                    fetchVariants(products);
+                }
+            });
+        }
+
+        const cancelEditVariant = document.getElementById('cancelEditVariant');
+        if (cancelEditVariant) {
+            cancelEditVariant.addEventListener('click', () => {
+                currentEditId = null;
+                const editVariantImage = document.getElementById('editVariantImage');
+                if (editVariantImage) {
+                    editVariantImage.value = '';
+                }
+                closeEditVariantModal();
+            });
+        }
+
+        const closeEditVariantModalBtn = document.getElementById('closeEditVariantModal');
+        if (closeEditVariantModalBtn) {
+            closeEditVariantModalBtn.addEventListener('click', () => {
+                currentEditId = null;
+                const editVariantImage = document.getElementById('editVariantImage');
+                if (editVariantImage) {
+                    editVariantImage.value = '';
+                }
+                closeEditVariantModal();
+            });
+        }
+
+        if (editVariantModal) {
+            editVariantModal.addEventListener('click', (event) => {
+                if (event.target === editVariantModal) {
+                    currentEditId = null;
+                    const editVariantImage = document.getElementById('editVariantImage');
+                    if (editVariantImage) {
+                        editVariantImage.value = '';
+                    }
+                    closeEditVariantModal();
+                }
+            });
+        }
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && editVariantModal?.classList.contains('open')) {
+                currentEditId = null;
+                const editVariantImage = document.getElementById('editVariantImage');
+                if (editVariantImage) {
+                    editVariantImage.value = '';
+                }
+                closeEditVariantModal();
+            }
+        });
+
+        const variantTableBody = document.getElementById('variantTableBody');
+        if (variantTableBody) {
+            variantTableBody.addEventListener('click', async (event) => {
+                const target = event.target;
+                if (!(target instanceof HTMLElement)) {
+                    return;
+                }
+                if (target.classList.contains('btn-edit')) {
+                    const id = target.getAttribute('data-id');
+                    if (!id || !variantMap[id]) return;
+                    const variant = variantMap[id];
+                    currentEditId = id;
+                    const editVariantSku = document.getElementById('editVariantSku');
+                    const editVariantProduct = document.getElementById('editVariantProduct');
+                    const editVariantSize = document.getElementById('editVariantSize');
+                    const editVariantQuantity = document.getElementById('editVariantQuantity');
+                    const editVariantPrice = document.getElementById('editVariantPrice');
+                    editVariantSku.value = variant.sku || '';
+                    fillProductOptions(editVariantProduct, cachedProducts, String(variant.product_id || ''));
+                    editVariantSize.value = variant.size || '';
+                    editVariantQuantity.value = typeof variant.quantity === 'number' ? variant.quantity : '';
+                    editVariantPrice.value = typeof variant.price === 'number' ? variant.price : '';
+                    openEditVariantModal();
+                }
+                if (target.classList.contains('btn-danger')) {
+                    const id = target.getAttribute('data-id');
+                    if (!id) return;
+                    if (!confirm('Bạn có chắc chắn muốn xóa biến thể này?')) {
+                        return;
+                    }
+                    const deleted = await deleteVariant(id);
+                    if (deleted) {
+                        const products = await fetchProducts();
+                        fetchVariants(products);
+                    }
+                }
+            });
+        }
+
+        (async () => {
+            const products = await fetchProducts();
+            fetchVariants(products);
+        })();
+    </script>
+</body>
+</html>

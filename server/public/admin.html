@@ -126,6 +126,33 @@
             color: var(--accent);
         }
 
+        .nav-item,
+        .btn-logout,
+        .btn-refresh,
+        .card,
+        .stat-card,
+        .info-card {
+            transition: background-color 0.2s ease, color 0.2s ease,
+                border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .card:hover,
+        .stat-card:hover,
+        .info-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.25);
+        }
+
+        .btn-logout:hover,
+        .btn-refresh:hover,
+        .nav-item:hover {
+            transform: translateY(-1px);
+        }
+
+        .data-table tr {
+            transition: background-color 0.2s ease;
+        }
+
         .main-area {
             flex: 1;
             padding: 24px 32px;
@@ -338,6 +365,13 @@
                 align-items: flex-start;
             }
         }
+
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation: none !important;
+                transition: none !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -353,8 +387,9 @@
             <nav class="nav">
                 <a class="nav-item active" href="/admin.html">Trang chủ</a>
                 <a class="nav-item" href="/product.html">Sản phẩm</a>
+                <a class="nav-item" href="/product-variant.html">Biến thể</a>
                 <a class="nav-item" href="/category.html">Danh mục</a>
-                <a class="nav-item" href="#">Đơn hàng</a>
+                <a class="nav-item" href="/order.html">Đơn hàng</a>
                 <a class="nav-item" href="#">Khách hàng</a>
                 <a class="nav-item" href="#">Thống kê</a>
                 <a class="nav-item" href="#">Banner</a>
