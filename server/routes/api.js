@@ -65,16 +65,28 @@ router.delete("/category/:id", categoryCtrl.deleteCategory);
 // Product
 router.get("/product", productCtrl.getProducts);
 router.get("/product/:id", productCtrl.getProductById);
-router.post("/product", productCtrl.createProduct);
-router.put("/product/:id", productCtrl.updateProduct);
-router.delete("/product/:id", productCtrl.deleteProduct);
+router.post("/product", mdw.api_auth, productCtrl.createProduct);
+router.put("/product/:id", mdw.api_auth, productCtrl.updateProduct);
+router.delete("/product/:id", mdw.api_auth, productCtrl.deleteProduct);
 
 // Product Variant
 router.get("/product-variant", productVariantCtrl.getProductVariants);
 router.get("/product-variant/:id", productVariantCtrl.getProductVariantById);
-router.post("/product-variant", productVariantCtrl.createProductVariant);
-router.put("/product-variant/:id", productVariantCtrl.updateProductVariant);
-router.delete("/product-variant/:id", productVariantCtrl.deleteProductVariant);
+router.post(
+  "/product-variant",
+  mdw.api_auth,
+  productVariantCtrl.createProductVariant
+);
+router.put(
+  "/product-variant/:id",
+  mdw.api_auth,
+  productVariantCtrl.updateProductVariant
+);
+router.delete(
+  "/product-variant/:id",
+  mdw.api_auth,
+  productVariantCtrl.deleteProductVariant
+);
 router.post(
   "/product-variant/:id/image",
   uploadProductVariantImage,
