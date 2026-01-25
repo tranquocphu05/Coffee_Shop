@@ -54,6 +54,11 @@ router.post("/account/register", accCtrl.doReg);
 router.post("/account/login/app", accCtrl.doLoginApp);
 router.post("/account/login/web", accCtrl.doLoginWeb);
 router.get("/account/verify", accCtrl.verifyToken);
+router.get("/account/list", mdw.api_auth, accCtrl.GetAllAccount);
+router.get("/account/:id", mdw.api_auth, accCtrl.getAccountById);
+router.put("/account/:id/without-address", mdw.api_auth, upload.single("image"), accCtrl.updateAccountWithoutAddress);
+router.put("/account/:id/with-address", mdw.api_auth, upload.single("image"), accCtrl.updateAccountWithAddress);
+router.delete("/account/:id", mdw.api_auth, accCtrl.deleteAccount);
 
 // Category
 router.get("/category", categoryCtrl.getCategories);

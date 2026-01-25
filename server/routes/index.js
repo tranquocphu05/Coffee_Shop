@@ -31,4 +31,8 @@ router.get("/order.html", (req, res) => {
   res.render("order");
 });
 
+router.get("/admin/customers", (req, res) => {
+  res.render("admin_customers");
+});
+
 module.exports = router;

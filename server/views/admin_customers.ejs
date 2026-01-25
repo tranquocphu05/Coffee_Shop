@@ -1,0 +1,1292 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Quản lý khách hàng - Admin</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #0b1020;
+        --surface: #0f172a;
+        --surface-2: #111b34;
+        --border: #1f2a44;
+        --text: #e5e7eb;
+        --muted: #a3adc2;
+        --accent: #3b82f6;
+        --accent-2: #1d4ed8;
+        --success: #22c55e;
+        --danger: #ef4444;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Inter", Arial, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+      }
+
+      a {
+        color: inherit;
+      }
+
+      .app-shell {
+        display: flex;
+        min-height: 100vh;
+      }
+
+      .sidebar {
+        width: 240px;
+        background: #0c1226;
+        border-right: 1px solid var(--border);
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .brand-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 12px;
+        background: var(--accent);
+        display: grid;
+        place-items: center;
+        font-weight: bold;
+      }
+
+      .brand-title {
+        font-size: 13px;
+        color: var(--muted);
+      }
+
+      .brand-subtitle {
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--text);
+      }
+
+      .nav {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .nav-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+        border-radius: 10px;
+        text-decoration: none;
+        color: var(--muted);
+        transition: all 0.2s ease;
+      }
+
+      .nav-item:hover {
+        background: rgba(59, 130, 246, 0.12);
+        color: var(--text);
+      }
+
+      .nav-item.active {
+        background: var(--surface-2);
+        color: var(--text);
+        border: 1px solid var(--border);
+      }
+
+      .sidebar-footer {
+        margin-top: auto;
+      }
+
+      .btn-logout {
+        width: 100%;
+        padding: 10px 14px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: transparent;
+        color: var(--text);
+        cursor: pointer;
+        font-weight: 600;
+      }
+
+      .btn-logout:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+
+      .main-area {
+        flex: 1;
+        padding: 24px 32px;
+      }
+
+      .topbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 18px 22px;
+        margin-bottom: 20px;
+      }
+
+      .page-label {
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: var(--muted);
+      }
+
+      .page-title {
+        font-size: 22px;
+        margin-top: 4px;
+      }
+
+      .page-description {
+        color: var(--muted);
+        margin-top: 6px;
+        font-size: 13px;
+      }
+
+      .user-chip {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .user-details {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 4px;
+      }
+
+      .user-name {
+        font-weight: 600;
+      }
+
+      .user-email {
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .user-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        border: 1px solid var(--border);
+        display: grid;
+        place-items: center;
+        font-weight: 600;
+        background: #111827;
+      }
+
+      .content {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+
+      .scrollbar-thin::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+      .scrollbar-thin::-webkit-scrollbar-thumb {
+        background-color: rgba(148, 163, 184, 0.8);
+        border-radius: 9999px;
+      }
+
+      @media (max-width: 980px) {
+        .app-shell {
+          flex-direction: column;
+        }
+
+        .sidebar {
+          width: 100%;
+          flex-direction: row;
+          align-items: center;
+          flex-wrap: wrap;
+        }
+
+        .nav {
+          flex-direction: row;
+          flex-wrap: wrap;
+        }
+
+        .main-area {
+          padding: 16px;
+        }
+
+        .topbar {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 12px;
+        }
+
+        .user-details {
+          align-items: flex-start;
+        }
+      }
+    </style>
+  </head>
+
+  <body class="bg-slate-950 text-slate-100">
+    <div class="app-shell">
+
+      <!-- Sidebar -->
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-avatar">CS</div>
+          <div>
+            <div class="brand-title">Admin</div>
+            <div class="brand-subtitle">Coffee_Shop</div>
+          </div>
+        </div>
+        <nav class="nav">
+          <a class="nav-item" href="/admin.html">Trang chủ</a>
+          <a class="nav-item" href="/product.html">Sản phẩm</a>
+          <a class="nav-item" href="/product-variant.html">Biến thể</a>
+          <a class="nav-item" href="/category.html">Danh mục</a>
+          <a class="nav-item" href="/order.html">Đơn hàng</a>
+          <a class="nav-item active" href="/admin/customers">Khách hàng</a>
+          <a class="nav-item" href="#">Thống kê</a>
+          <a class="nav-item" href="#">Banner</a>
+        </nav>
+        <div class="sidebar-footer">
+          <button class="btn-logout" id="logoutBtn">Đăng xuất</button>
+        </div>
+      </aside>
+
+      <!-- Main content -->
+      <div class="main-area">
+        <header class="topbar">
+          <div>
+            <div class="page-label">Bảng quản trị</div>
+            <div class="page-title">Quản lý khách hàng</div>
+            <div class="page-description">Thêm, sửa, xóa và quản lý thông tin khách hàng, xem lịch sử mua hàng và hành vi.</div>
+          </div>
+          <div class="user-chip">
+            <div class="user-details">
+              <span class="user-name" id="currentUserName">Admin</span>
+              <span class="user-email" id="currentUserEmail"></span>
+            </div>
+            <div class="user-avatar" aria-hidden="true">A</div>
+          </div>
+        </header>
+
+        <div class="content">
+          <!-- Search & Filters -->
+          <section
+            class="flex flex-col md:flex-row md:items-center gap-3 md:gap-4"
+          >
+            <div
+              class="flex flex-1 items-center gap-2 rounded-lg border border-slate-800 bg-slate-900/60 px-3 py-2"
+            >
+              <span class="material-symbols-outlined text-slate-500">
+                search
+              </span>
+              <input
+                id="searchInput"
+                type="text"
+                placeholder="Tìm kiếm theo tên, email, số điện thoại..."
+                class="bg-transparent text-sm flex-1 outline-none placeholder:text-slate-500"
+              />
+            </div>
+          </section>
+
+          <!-- Main grid -->
+          <section
+            class="grid grid-cols-1 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] gap-6"
+          >
+            <!-- Customers Table -->
+            <div class="rounded-xl border border-slate-800 bg-slate-900/60 shadow-xl overflow-hidden flex flex-col">
+            <div
+              class="flex items-center justify-between px-4 md:px-6 py-3 border-b border-slate-800"
+            >
+              <p class="text-sm font-semibold">Danh sách khách hàng</p>
+              <p class="text-xs text-slate-500">
+                Hiển thị
+                <span id="customerCount" class="font-semibold text-slate-200"
+                  >0</span
+                >
+                khách hàng
+              </p>
+            </div>
+
+              <div class="overflow-auto scrollbar-thin flex-1">
+                <table class="min-w-full text-sm">
+                  <thead class="bg-slate-900/80 sticky top-0 z-10">
+                    <tr class="text-left text-xs text-slate-400 uppercase">
+                      <th class="px-4 py-3 font-medium">Khách hàng</th>
+                      <th class="px-4 py-3 font-medium">Email</th>
+                      <th class="px-4 py-3 font-medium">Số điện thoại</th>
+                      <th class="px-4 py-3 font-medium">Vai trò</th>
+                      <th class="px-4 py-3 font-medium">Tổng đơn hàng</th>
+                      <th class="px-4 py-3 font-medium">Tổng chi tiêu</th>
+                      <th class="px-4 py-3 font-medium">Trạng thái</th>
+                      <th class="px-4 py-3 font-medium text-right">
+                        Hành động
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody id="customerTableBody" class="divide-y divide-slate-800">
+                    <!-- JS render rows -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Right column: add/edit customer form -->
+            <div class="flex flex-col gap-6">
+              <!-- Add/Edit Customer Form -->
+              <div
+                class="rounded-xl border border-slate-800 bg-slate-900/60 shadow-xl"
+              >
+                <div
+                  class="flex items-center justify-between px-4 md:px-6 py-3 border-b border-slate-800"
+                >
+                  <p class="text-sm font-semibold" id="customerFormTitle">
+                    Thêm khách hàng mới
+                  </p>
+                </div>
+
+                <form
+                  id="customerForm"
+                  enctype="multipart/form-data"
+                  class="px-4 md:px-6 py-4 flex flex-col gap-4"
+                >
+              <input type="hidden" id="customerId" name="id" />
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label class="text-xs text-slate-400 mb-1 block">Tên khách hàng *</label>
+                  <input
+                    type="text"
+                    id="customerName"
+                    name="name"
+                    required
+                    class="w-full h-10 rounded-lg border border-slate-800 bg-slate-950/50 px-3 text-sm outline-none focus:ring-1 focus:ring-blue-500"
+                    placeholder="Nhập tên khách hàng"
+                  />
+                </div>
+
+                <div>
+                  <label class="text-xs text-slate-400 mb-1 block">Email *</label>
+                  <input
+                    type="email"
+                    id="customerEmail"
+                    name="email"
+                    required
+                    class="w-full h-10 rounded-lg border border-slate-800 bg-slate-950/50 px-3 text-sm outline-none focus:ring-1 focus:ring-blue-500"
+                    placeholder="email@example.com"
+                  />
+                </div>
+
+                <div>
+                  <label class="text-xs text-slate-400 mb-1 block">Mật khẩu <span id="passwordRequired" class="text-rose-400">*</span></label>
+                  <input
+                    type="password"
+                    id="customerPassword"
+                    name="pass"
+                    class="w-full h-10 rounded-lg border border-slate-800 bg-slate-950/50 px-3 text-sm outline-none focus:ring-1 focus:ring-blue-500"
+                    placeholder="Để trống nếu không đổi"
+                  />
+                </div>
+
+                <div>
+                  <label class="text-xs text-slate-400 mb-1 block">Vai trò</label>
+                  <select
+                    id="customerRole"
+                    name="role"
+                    class="w-full h-10 rounded-lg border border-slate-800 bg-slate-950/50 px-3 text-sm outline-none focus:ring-1 focus:ring-blue-500"
+                  >
+                    <option value="user">Khách hàng</option>
+                    <option value="admin">Quản trị viên</option>
+                    <option value="engineer">Kỹ sư</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label class="text-xs text-slate-400 mb-1 block">Trạng thái</label>
+                  <select
+                    id="customerStatus"
+                    name="is_active"
+                    class="w-full h-10 rounded-lg border border-slate-800 bg-slate-950/50 px-3 text-sm outline-none focus:ring-1 focus:ring-blue-500"
+                  >
+                    <option value="true">Hoạt động</option>
+                    <option value="false">Vô hiệu hóa</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Phone and Address fields container (for add mode) -->
+              <div id="phoneAddressContainer">
+                <div>
+                  <label class="text-xs text-slate-400 mb-1 block">Số điện thoại</label>
+                  <input
+                    type="text"
+                    id="customerPhone"
+                    name="phone"
+                    class="w-full h-10 rounded-lg border border-slate-800 bg-slate-950/50 px-3 text-sm outline-none focus:ring-1 focus:ring-blue-500"
+                    placeholder="0123456789"
+                  />
+                </div>
+
+                <div>
+                  <label class="text-xs text-slate-400 mb-1 block">Địa chỉ</label>
+                  <textarea
+                    id="customerAddress"
+                    name="address"
+                    rows="2"
+                    class="w-full rounded-lg border border-slate-800 bg-slate-950/50 px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-blue-500"
+                    placeholder="Nhập địa chỉ"
+                  ></textarea>
+                </div>
+              </div>
+
+              <!-- Dynamic addresses container (for edit mode with addresses) -->
+              <div id="addressesContainer" class="hidden"></div>
+
+              <div>
+                <label class="text-xs text-slate-400 mb-1 block">Ảnh đại diện</label>
+                <input
+                  type="file"
+                  id="customerImage"
+                  name="image"
+                  accept="image/*"
+                  class="block w-full text-sm text-slate-400 file:mr-2 file:rounded file:border-0 file:bg-slate-800 file:px-3 file:py-2 file:text-sm file:text-slate-100 hover:file:bg-slate-700"
+                />
+                <div id="customerImagePreview" class="mt-2 hidden">
+                  <img id="previewImg" src="" alt="Preview" class="h-20 w-20 rounded-lg object-cover border border-slate-800" />
+                </div>
+              </div>
+
+                  <p
+                    id="customerFormMessage"
+                    class="hidden text-xs mt-1"
+                  ></p>
+
+                  <div class="flex justify-end gap-2 pt-2">
+                    <button
+                      type="button"
+                      id="resetCustomerForm"
+                      class="h-9 rounded-lg border border-slate-700 px-3 text-xs font-medium text-slate-200 hover:bg-slate-800 transition-colors"
+                    >
+                      Huỷ
+                    </button>
+                    <button
+                      type="submit"
+                      id="submitCustomerBtn"
+                      class="h-9 rounded-lg bg-blue-600 px-4 text-xs font-semibold text-white hover:bg-blue-500 transition-colors"
+                    >
+                      <span id="submitButtonText">Lưu khách hàng</span>
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <!-- Customer Detail Modal -->
+      <div
+        id="customerDetailModal"
+        class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"
+      >
+        <div
+          class="bg-slate-900 rounded-xl border border-slate-800 shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col"
+        >
+          <!-- Modal Header -->
+          <div
+            class="flex items-center justify-between px-6 py-4 border-b border-slate-800"
+          >
+            <h2 class="text-lg font-semibold">Chi tiết khách hàng</h2>
+            <button
+              id="closeDetailModalBtn"
+              class="p-2 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white"
+            >
+              <span class="material-symbols-outlined text-xl">close</span>
+            </button>
+          </div>
+
+          <!-- Modal Content -->
+          <div class="overflow-auto scrollbar-thin flex-1 px-6 py-4">
+            <div id="customerDetailContent" class="space-y-6">
+              <!-- Loading state -->
+              <div class="text-center py-8">
+                <p class="text-slate-400">Đang tải...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    <!-- Google Icons -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"
+      rel="stylesheet"
+    />
+
+    <script>
+      // Lấy token từ URL hoặc localStorage (giống admin.ejs)
+      const urlParams = new URLSearchParams(window.location.search);
+      let token = urlParams.get('token') || localStorage.getItem('adminToken');
+      let userData = JSON.parse(localStorage.getItem('adminUser') || '{}');
+
+      // Nếu chưa đăng nhập thì quay lại /login
+      if (!token) {
+        window.location.href = "/login";
+      }
+
+      // Nếu có token từ URL, lưu vào localStorage
+      if (urlParams.get('token') && !localStorage.getItem('adminToken')) {
+        token = urlParams.get('token');
+        localStorage.setItem('adminToken', token);
+      }
+
+      function setUserInfo(name, email) {
+        const userNameEl = document.getElementById('currentUserName');
+        const userEmailEl = document.getElementById('currentUserEmail');
+        const displayName = name || 'Admin';
+
+        if (userNameEl) userNameEl.textContent = displayName;
+        if (userEmailEl) userEmailEl.textContent = email || '';
+
+        const avatarEl = document.querySelector('.user-avatar');
+        if (avatarEl && displayName) {
+          avatarEl.textContent = displayName.trim().charAt(0).toUpperCase();
+        }
+      }
+
+      // Kiểm tra ban đầu với dữ liệu từ localStorage
+      if (token && userData.role === 'admin') {
+        setUserInfo(userData.fullName || userData.email, userData.email);
+      } else if (!token) {
+        // Không có token, chuyển về trang login
+        window.location.href = '/login.html';
+      }
+
+      const customerTableBody = document.getElementById("customerTableBody");
+      const customerCount = document.getElementById("customerCount");
+      const searchInput = document.getElementById("searchInput");
+      const customerDetailModal = document.getElementById("customerDetailModal");
+      const customerForm = document.getElementById("customerForm");
+      const customerFormMessage = document.getElementById("customerFormMessage");
+      const closeDetailModalBtn = document.getElementById("closeDetailModalBtn");
+      const resetCustomerFormBtn = document.getElementById("resetCustomerForm");
+      const submitCustomerBtn = document.getElementById("submitCustomerBtn");
+      const customerFormTitle = document.getElementById("customerFormTitle");
+      const submitButtonText = document.getElementById("submitButtonText");
+      const passwordRequired = document.getElementById("passwordRequired");
+      const logoutBtn = document.getElementById("logoutBtn");
+
+      let allCustomers = [];
+      let isEditMode = false;
+      let currentEditCustomerAddresses = []; // Lưu addresses của account đang edit
+
+      // Function logout
+      function logout() {
+        // Xác nhận trước khi đăng xuất
+        if (confirm('Bạn có chắc chắn muốn đăng xuất?')) {
+          // Xóa token và user data khỏi localStorage
+          localStorage.removeItem('adminToken');
+          localStorage.removeItem('adminUser');
+          
+          // Xóa token khỏi URL nếu có
+          if (window.location.href.includes('token=')) {
+            window.history.replaceState({}, document.title, '/admin/customers');
+          }
+          
+          // Chuyển về trang login
+          window.location.href = '/login.html';
+        }
+      }
+      
+      // Đảm bảo function logout có thể được gọi từ global scope
+      window.logout = logout;
+      
+      // Gắn event listener cho nút đăng xuất
+      if (logoutBtn) {
+        logoutBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          logout();
+        });
+      }
+
+      function formatCurrency(v) {
+        const num = Number(v) || 0;
+        return num.toLocaleString("vi-VN", {
+          style: "currency",
+          currency: "VND",
+          maximumFractionDigits: 0,
+        });
+      }
+
+      function formatDate(dateString) {
+        if (!dateString) return "-";
+        const date = new Date(dateString);
+        return date.toLocaleString("vi-VN", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+        });
+      }
+
+      function renderCustomers() {
+        const search = searchInput.value.trim().toLowerCase();
+
+        let filtered = allCustomers.slice();
+
+        if (search) {
+          filtered = filtered.filter((customer) => {
+            const name = (customer.name || "").toLowerCase();
+            const email = (customer.email || "").toLowerCase();
+            const phone = (customer.phone || "").toLowerCase();
+            return (
+              name.includes(search) ||
+              email.includes(search) ||
+              phone.includes(search)
+            );
+          });
+        }
+
+        customerTableBody.innerHTML = "";
+
+        if (!filtered.length) {
+          customerTableBody.innerHTML =
+            '<tr><td colspan="8" class="px-4 py-8 text-center text-xs text-slate-500">Không có khách hàng nào.</td></tr>';
+          customerCount.textContent = "0";
+          return;
+        }
+
+        filtered.forEach((customer) => {
+          const row = document.createElement("tr");
+          row.className = "hover:bg-slate-900/80";
+
+          const imageUrl = customer.image 
+            ? `/images/avatars/${customer.image}` 
+            : null;
+
+          const stats = customer.stats || {};
+          const statusLabel = customer.is_active ? "Hoạt động" : "Vô hiệu hóa";
+          const statusColor = customer.is_active
+            ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/40"
+            : "bg-rose-500/10 text-rose-400 border-rose-500/40";
+
+          const roleLabel = customer.role === "admin" ? "Quản trị viên" : customer.role === "engineer" ? "Kỹ sư" : "Khách hàng";
+          const roleColor = customer.role === "admin" 
+            ? "bg-blue-500/10 text-blue-400 border-blue-500/40"
+            : customer.role === "engineer"
+            ? "bg-purple-500/10 text-purple-400 border-purple-500/40"
+            : "bg-slate-500/10 text-slate-400 border-slate-500/40";
+
+          row.innerHTML = `
+            <td class="px-4 py-3">
+              <div class="flex items-center gap-3">
+                <div class="h-10 w-10 rounded-full bg-slate-800 overflow-hidden flex items-center justify-center flex-shrink-0">
+                  ${
+                    imageUrl
+                      ? `<img src="${imageUrl}" alt="${customer.name}" class="h-full w-full object-cover" onerror="this.parentElement.innerHTML='<span class=\\'text-xs text-slate-500\\'>IMG</span>'" />`
+                      : '<span class="text-xs text-slate-500">IMG</span>'
+                  }
+                </div>
+                <div class="flex flex-col">
+                  <span class="text-xs font-medium text-slate-100">${customer.name || "-"}</span>
+                </div>
+              </div>
+            </td>
+            <td class="px-4 py-3 text-xs text-slate-300">
+              ${customer.email || "-"}
+            </td>
+            <td class="px-4 py-3 text-xs text-slate-300">
+              ${customer.phone || "-"}
+            </td>
+            <td class="px-4 py-3">
+              <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium ${roleColor}">
+                ${roleLabel}
+              </span>
+            </td>
+            <td class="px-4 py-3 text-xs text-slate-100">
+              ${stats.total_orders || 0}
+            </td>
+            <td class="px-4 py-3 text-xs font-semibold text-slate-100">
+              ${formatCurrency(stats.total_spent || 0)}
+            </td>
+            <td class="px-4 py-3">
+              <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium ${statusColor}">
+                ${statusLabel}
+              </span>
+            </td>
+            <td class="px-4 py-3 text-right">
+              <div class="flex items-center justify-end gap-1">
+                <button
+                  onclick="viewCustomerDetail('${customer._id}')"
+                  class="inline-flex items-center justify-center rounded-md border border-slate-700 bg-slate-900/60 px-2 py-1 text-[10px] text-slate-200 hover:bg-slate-800"
+                  title="Xem chi tiết"
+                >
+                  <span class="material-symbols-outlined text-sm">visibility</span>
+                </button>
+                <button
+                  onclick="editCustomer('${customer._id}')"
+                  class="inline-flex items-center justify-center rounded-md border border-slate-700 bg-slate-900/60 px-2 py-1 text-[10px] text-slate-200 hover:bg-slate-800"
+                  title="${customer.role === "admin" ? "Không thể sửa tài khoản admin" : "Sửa"}"
+                  ${customer.role === "admin" ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ""}
+                >
+                  <span class="material-symbols-outlined text-sm">edit</span>
+                </button>
+                <button
+                  onclick="deleteCustomer('${customer._id}', '${(customer.name || "").replace(/'/g, "\\'")}')"
+                  class="inline-flex items-center justify-center rounded-md border border-rose-700 bg-rose-900/60 px-2 py-1 text-[10px] text-rose-200 hover:bg-rose-800"
+                  title="${customer.role === "admin" ? "Không thể xóa tài khoản admin" : "Xóa"}"
+                  ${customer.role === "admin" ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ""}
+                >
+                  <span class="material-symbols-outlined text-sm">delete</span>
+                </button>
+              </div>
+            </td>
+          `;
+          customerTableBody.appendChild(row);
+        });
+
+        customerCount.textContent = String(filtered.length);
+      }
+
+      async function loadCustomers() {
+        try {
+          console.log("Loading customers with token:", token ? "Token exists" : "No token");
+          const res = await fetch("/api/account/list", {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+          
+          console.log("Response status:", res.status);
+          const data = await res.json();
+          console.log("Response data:", data);
+          
+          if (!res.ok) {
+            throw new Error(data.error || data.msg || "Không thể tải danh sách khách hàng");
+          }
+          
+          if (Array.isArray(data.data)) {
+            allCustomers = data.data;
+            console.log("Loaded customers:", allCustomers.length);
+          } else {
+            console.warn("Data is not an array:", data);
+            allCustomers = [];
+          }
+          renderCustomers();
+        } catch (err) {
+          console.error("Load customers error", err);
+          alert("Lỗi khi tải danh sách khách hàng: " + (err.message || "Vui lòng thử lại."));
+        }
+      }
+
+      function resetForm() {
+        isEditMode = false;
+        customerFormTitle.textContent = "Thêm khách hàng mới";
+        submitButtonText.textContent = "Lưu khách hàng";
+        passwordRequired.style.display = "inline";
+        customerForm.reset();
+        document.getElementById("customerId").value = "";
+        document.getElementById("customerImagePreview").classList.add("hidden");
+        customerFormMessage.classList.add("hidden");
+        const passwordInput = document.getElementById("customerPassword");
+        passwordInput.disabled = false;
+        passwordInput.placeholder = "Để trống nếu không đổi";
+        passwordInput.required = true;
+        // Enable lại dropdown role
+        const roleSelect = document.getElementById("customerRole");
+        roleSelect.disabled = false;
+        roleSelect.title = "";
+        
+        // Hiện lại phone và address container cho add mode
+        const phoneAddressContainer = document.getElementById("phoneAddressContainer");
+        const addressesContainer = document.getElementById("addressesContainer");
+        phoneAddressContainer.style.display = "block";
+        addressesContainer.classList.add("hidden");
+        addressesContainer.innerHTML = "";
+        
+        // Reset addresses khi reset form
+        currentEditCustomerAddresses = [];
+      }
+
+      async function editCustomer(customerId) {
+        // Xác nhận trước khi chỉnh sửa
+        if (!confirm("Bạn có chắc chắn muốn sửa thông tin account này?")) {
+          return; // Người dùng hủy, không thực hiện thao tác
+        }
+
+        try {
+          // Fetch account details với addresses từ API
+          const res = await fetch(`/api/account/${customerId}`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+          const data = await res.json();
+
+          if (!res.ok || !data.data || !data.data.customer) {
+            alert("Không tìm thấy khách hàng!");
+            return;
+          }
+
+          const customer = data.data.customer;
+
+          // Không cho phép sửa account admin
+          if (customer.role === "admin") {
+            alert("Không thể chỉnh sửa tài khoản admin");
+            return;
+          }
+
+          isEditMode = true;
+          customerFormTitle.textContent = "Sửa thông tin khách hàng";
+          submitButtonText.textContent = "Cập nhật khách hàng";
+          passwordRequired.style.display = "none";
+          document.getElementById("customerId").value = customer._id;
+          document.getElementById("customerName").value = customer.name || "";
+          document.getElementById("customerEmail").value = customer.email || "";
+          document.getElementById("customerRole").value = customer.role || "user";
+          
+          // Disable dropdown role nếu là admin
+          const roleSelect = document.getElementById("customerRole");
+          if (customer.role === "admin") {
+            roleSelect.disabled = true;
+            roleSelect.title = "Không thể thay đổi role của tài khoản admin";
+          } else {
+            roleSelect.disabled = false;
+            roleSelect.title = "";
+          }
+          
+          document.getElementById("customerStatus").value = customer.is_active ? "true" : "false";
+          const passwordInput = document.getElementById("customerPassword");
+          passwordInput.value = "";
+          passwordInput.required = false;
+          passwordInput.disabled = true;
+          passwordInput.placeholder = "Không thể thay đổi mật khẩu khi sửa";
+
+          if (customer.image) {
+            const previewImg = document.getElementById("previewImg");
+            previewImg.src = `/images/avatars/${customer.image}`;
+            document.getElementById("customerImagePreview").classList.remove("hidden");
+          } else {
+            document.getElementById("customerImagePreview").classList.add("hidden");
+          }
+
+          // Xử lý addresses
+          const phoneAddressContainer = document.getElementById("phoneAddressContainer");
+          const addressesContainer = document.getElementById("addressesContainer");
+          
+          // Kiểm tra xem có addresses không
+          const addresses = customer.addresses || [];
+          // Lưu addresses để dùng khi submit
+          currentEditCustomerAddresses = addresses;
+          
+          if (addresses.length === 0) {
+            // Không có address → ẩn phone và address fields
+            phoneAddressContainer.style.display = "none";
+            addressesContainer.classList.add("hidden");
+            addressesContainer.innerHTML = "";
+          } else {
+            // Có address → ẩn container mặc định, hiện container động
+            phoneAddressContainer.style.display = "none";
+            addressesContainer.classList.remove("hidden");
+            addressesContainer.innerHTML = "";
+            
+            // Tạo fields cho mỗi address
+            addresses.forEach((addr, index) => {
+              const addressSection = document.createElement("div");
+              addressSection.className = "space-y-3 mb-4 p-4 rounded-lg border border-slate-800 bg-slate-950/40";
+              addressSection.innerHTML = `
+                <div class="flex items-center justify-between mb-2">
+                  <label class="text-xs font-semibold text-slate-300">Địa chỉ #${index + 1}</label>
+                </div>
+                <div>
+                  <label class="text-xs text-slate-400 mb-1 block">Tên người nhận</label>
+                  <input
+                    type="text"
+                    name="address_name_${index}"
+                    value="${addr.name || ""}"
+                    class="w-full h-10 rounded-lg border border-slate-800 bg-slate-950/50 px-3 text-sm outline-none focus:ring-1 focus:ring-blue-500"
+                    placeholder="Tên người nhận"
+                  />
+                </div>
+                <div>
+                  <label class="text-xs text-slate-400 mb-1 block">Số điện thoại</label>
+                  <input
+                    type="text"
+                    name="address_phone_${index}"
+                    value="${addr.phone || ""}"
+                    class="w-full h-10 rounded-lg border border-slate-800 bg-slate-950/50 px-3 text-sm outline-none focus:ring-1 focus:ring-blue-500"
+                    placeholder="0123456789"
+                  />
+                </div>
+                <div>
+                  <label class="text-xs text-slate-400 mb-1 block">Địa chỉ</label>
+                  <textarea
+                    name="address_address_${index}"
+                    rows="2"
+                    class="w-full rounded-lg border border-slate-800 bg-slate-950/50 px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-blue-500"
+                    placeholder="Nhập địa chỉ"
+                  >${addr.address || ""}</textarea>
+                </div>
+                <input type="hidden" name="address_id_${index}" value="${addr._id || ""}" />
+              `;
+              addressesContainer.appendChild(addressSection);
+            });
+          }
+
+          customerFormMessage.classList.add("hidden");
+
+          // Scroll đến form
+          document
+            .getElementById("customerForm")
+            .scrollIntoView({ behavior: "smooth", block: "start" });
+        } catch (error) {
+          console.error("Error loading customer:", error);
+          alert("Lỗi khi tải thông tin khách hàng. Vui lòng thử lại.");
+        }
+      }
+
+      async function viewCustomerDetail(customerId) {
+        try {
+          customerDetailModal.classList.remove("hidden");
+          const detailContent = document.getElementById("customerDetailContent");
+          detailContent.innerHTML = '<div class="text-center py-8"><p class="text-slate-400">Đang tải...</p></div>';
+
+          const res = await fetch(`/api/account/${customerId}`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+          const data = await res.json();
+
+          if (!data.data || !data.data.customer) {
+            throw new Error(data.error || data.msg || "Không tìm thấy thông tin khách hàng");
+          }
+
+          const customer = data.data.customer;
+          // Tạm thời không có behavior stats, sẽ tính sau
+          const behavior = {
+            total_orders: 0,
+            total_spent: 0,
+            average_order_value: 0,
+            last_order_date: null,
+            top_products: []
+          };
+          const imageUrl = customer.image 
+            ? `/images/avatars/${customer.image}` 
+            : null;
+
+          detailContent.innerHTML = `
+            <!-- Customer Info -->
+            <div class="rounded-lg border border-slate-800 bg-slate-950/40 p-4">
+              <h3 class="text-sm font-semibold text-slate-300 mb-3 flex items-center gap-2">
+                <span class="material-symbols-outlined text-base">person</span>
+                Thông tin khách hàng
+              </h3>
+              <div class="flex gap-4 mb-4">
+                <div class="h-20 w-20 rounded-full bg-slate-800 overflow-hidden flex items-center justify-center flex-shrink-0">
+                  ${
+                    imageUrl
+                      ? `<img src="${imageUrl}" alt="${customer.name}" class="h-full w-full object-cover" onerror="this.parentElement.innerHTML='<span class=\\'text-xs text-slate-500\\'>IMG</span>'" />`
+                      : '<span class="text-xs text-slate-500">IMG</span>'
+                  }
+                </div>
+                <div class="flex-1">
+                  <p class="text-base font-semibold text-slate-100 mb-1">${customer.name || "N/A"}</p>
+                  <p class="text-xs text-slate-400 mb-1">${customer.email || "N/A"}</p>
+                  <p class="text-xs text-slate-400">${customer.phone || "N/A"}</p>
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-3 text-xs">
+                <div>
+                  <p class="text-slate-500 mb-1">Vai trò</p>
+                  <p class="text-slate-100">${customer.role === "admin" ? "Quản trị viên" : "Khách hàng"}</p>
+                </div>
+                <div>
+                  <p class="text-slate-500 mb-1">Trạng thái</p>
+                  <p class="text-slate-100">${customer.is_active ? "Hoạt động" : "Vô hiệu hóa"}</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Addresses List -->
+            <div class="rounded-lg border border-slate-800 bg-slate-950/40 p-4">
+              <h3 class="text-sm font-semibold text-slate-300 mb-3 flex items-center gap-2">
+                <span class="material-symbols-outlined text-base">location_on</span>
+                Danh sách địa chỉ (${customer.addresses && customer.addresses.length > 0 ? customer.addresses.length : 0})
+              </h3>
+              ${
+                customer.addresses && customer.addresses.length > 0
+                  ? `<div class="space-y-3">
+                      ${customer.addresses.map((addr, index) => `
+                        <div class="rounded-lg border border-slate-800 bg-slate-900/40 p-3">
+                          <div class="flex items-start justify-between mb-2">
+                            <p class="text-xs font-semibold text-slate-400">Địa chỉ #${index + 1}</p>
+                          </div>
+                          <div class="space-y-1 text-xs">
+                            <p class="text-slate-300"><span class="text-slate-500">Tên:</span> ${addr.name || "N/A"}</p>
+                            <p class="text-slate-300"><span class="text-slate-500">SĐT:</span> ${addr.phone || "N/A"}</p>
+                            <p class="text-slate-300"><span class="text-slate-500">Địa chỉ:</span> ${addr.address || "N/A"}</p>
+                          </div>
+                        </div>
+                      `).join('')}
+                    </div>`
+                  : `<p class="text-xs text-slate-500 text-center py-4">Chưa có địa chỉ nào</p>`
+              }
+            </div>
+
+            <!-- Behavior Stats -->
+            <div class="rounded-lg border border-slate-800 bg-slate-950/40 p-4">
+              <h3 class="text-sm font-semibold text-slate-300 mb-3 flex items-center gap-2">
+                <span class="material-symbols-outlined text-base">insights</span>
+                Hành vi khách hàng
+              </h3>
+              <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                <div class="rounded-lg border border-slate-800 bg-slate-900/40 p-3">
+                  <p class="text-slate-500 mb-1">Tổng đơn hàng</p>
+                  <p class="text-lg font-semibold text-blue-400">${behavior.total_orders || 0}</p>
+                </div>
+                <div class="rounded-lg border border-slate-800 bg-slate-900/40 p-3">
+                  <p class="text-slate-500 mb-1">Tổng chi tiêu</p>
+                  <p class="text-lg font-semibold text-emerald-400">${formatCurrency(behavior.total_spent || 0)}</p>
+                </div>
+                <div class="rounded-lg border border-slate-800 bg-slate-900/40 p-3">
+                  <p class="text-slate-500 mb-1">Giá trị đơn TB</p>
+                  <p class="text-lg font-semibold text-amber-400">${formatCurrency(behavior.average_order_value || 0)}</p>
+                </div>
+                <div class="rounded-lg border border-slate-800 bg-slate-900/40 p-3">
+                  <p class="text-slate-500 mb-1">Đơn hàng cuối</p>
+                  <p class="text-xs font-medium text-slate-300">${formatDate(behavior.last_order_date)}</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Top Products -->
+            ${behavior.top_products && behavior.top_products.length > 0 ? `
+              <div class="rounded-lg border border-slate-800 bg-slate-950/40 p-4">
+                <h3 class="text-sm font-semibold text-slate-300 mb-3 flex items-center gap-2">
+                  <span class="material-symbols-outlined text-base">shopping_bag</span>
+                  Sản phẩm đã mua nhiều nhất
+                </h3>
+                <div class="space-y-2">
+                  ${behavior.top_products.map((item, index) => {
+                    const imageUrl = item.product && item.product.image 
+                      ? `/images/products/${Array.isArray(item.product.image) ? item.product.image[0] : item.product.image}` 
+                      : null;
+                    return `
+                      <div class="flex gap-3 p-2 rounded-lg border border-slate-800 bg-slate-900/40">
+                        <div class="h-12 w-12 rounded-md bg-slate-800 overflow-hidden flex items-center justify-center flex-shrink-0">
+                          ${
+                            imageUrl
+                              ? `<img src="${imageUrl}" alt="${item.product.name}" class="h-full w-full object-cover" onerror="this.parentElement.innerHTML='<span class=\\'text-[10px] text-slate-500\\'>IMG</span>'" />`
+                              : '<span class="text-[10px] text-slate-500">IMG</span>'
+                          }
+                        </div>
+                        <div class="flex-1 min-w-0">
+                          <p class="text-xs font-medium text-slate-100 mb-1">${item.product ? item.product.name : "N/A"}</p>
+                          <div class="flex items-center justify-between">
+                            <p class="text-[10px] text-slate-500">Đã mua: <span class="text-slate-300 font-medium">${item.quantity || 0}</span></p>
+                            <p class="text-xs font-semibold text-slate-100">${formatCurrency(item.total_spent || 0)}</p>
+                          </div>
+                        </div>
+                      </div>
+                    `;
+                  }).join("")}
+                </div>
+              </div>
+            ` : ""}
+          `;
+        } catch (err) {
+          console.error("View customer detail error", err);
+          document.getElementById("customerDetailContent").innerHTML = `
+            <div class="text-center py-8">
+              <p class="text-rose-400">Lỗi: ${err.message}</p>
+            </div>
+          `;
+        }
+      }
+
+      async function deleteCustomer(customerId, customerName) {
+        const customer = allCustomers.find((c) => c._id === customerId);
+        
+        // Không cho phép xóa account admin
+        if (customer && customer.role === "admin") {
+          alert("Không thể xóa tài khoản admin");
+          return;
+        }
+
+        if (!confirm(`Bạn có chắc muốn xóa khách hàng "${customerName}"?`)) {
+          return;
+        }
+
+        try {
+          const res = await fetch(`/api/account/${customerId}`, {
+            method: "DELETE",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+          const data = await res.json();
+
+          if (res.ok) {
+            alert(data.message || data.msg || "Xóa khách hàng thành công");
+            await loadCustomers();
+          } else {
+            alert(data.error || data.msg || "Không thể xóa khách hàng");
+          }
+        } catch (err) {
+          console.error(err);
+          alert("Lỗi kết nối server. Vui lòng thử lại.");
+        }
+      }
+
+      function closeDetailModal() {
+        customerDetailModal.classList.add("hidden");
+      }
+
+      // Event listeners
+      resetCustomerFormBtn.addEventListener("click", () => {
+        resetForm();
+      });
+      closeDetailModalBtn.addEventListener("click", closeDetailModal);
+      searchInput.addEventListener("input", () => renderCustomers());
+
+      customerDetailModal.addEventListener("click", (e) => {
+        if (e.target === customerDetailModal) {
+          closeDetailModal();
+        }
+      });
+
+      customerForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        
+        const customerId = document.getElementById("customerId").value;
+        
+        // Xác nhận trước khi chỉnh sửa hoặc thêm mới
+        const actionText = isEditMode ? "cập nhật thông tin khách hàng này" : "thêm khách hàng mới";
+        const confirmMessage = `Bạn có chắc chắn muốn ${actionText}?`;
+        
+        if (!confirm(confirmMessage)) {
+          return; // Người dùng hủy, không thực hiện thao tác
+        }
+        
+        // Kiểm tra nếu đang sửa account admin
+        if (isEditMode && customerId) {
+          const customer = allCustomers.find((c) => c._id === customerId);
+          if (customer && customer.role === "admin") {
+            alert("Không thể chỉnh sửa tài khoản admin");
+            return;
+          }
+        }
+
+        customerFormMessage.classList.remove("hidden");
+        customerFormMessage.textContent = isEditMode ? "Đang cập nhật..." : "Đang thêm khách hàng...";
+        customerFormMessage.className = "block text-xs mt-1 text-amber-400";
+
+        const formData = new FormData(customerForm);
+
+        try {
+          let res;
+          if (isEditMode) {
+            // Kiểm tra account có address không để gọi đúng API
+            const hasAddress = currentEditCustomerAddresses && currentEditCustomerAddresses.length > 0;
+            const apiEndpoint = hasAddress 
+              ? `/api/account/${customerId}/with-address`
+              : `/api/account/${customerId}/without-address`;
+            
+            res = await fetch(apiEndpoint, {
+              method: "PUT",
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+              body: formData,
+            });
+          } else {
+            // Tạo account mới - chuyển formData thành JSON
+            const formDataObj = {};
+            formData.forEach((value, key) => {
+              formDataObj[key] = value;
+            });
+            
+            res = await fetch("/api/account/register", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify({
+                name: formDataObj.name,
+                email: formDataObj.email,
+                pass: formDataObj.pass,
+                role: formDataObj.role || "user",
+                phone: formDataObj.phone,
+                address: formDataObj.address,
+                is_active: formDataObj.is_active === "true" || formDataObj.is_active === true,
+              }),
+            });
+          }
+
+          const data = await res.json();
+
+          if (res.ok) {
+            customerFormMessage.textContent = data.message || data.msg || "Thành công!";
+            customerFormMessage.className = "block text-xs mt-1 text-emerald-400";
+            await loadCustomers();
+            setTimeout(() => {
+              resetForm();
+            }, 1000);
+          } else {
+            customerFormMessage.textContent = data.error || data.msg || "Có lỗi xảy ra";
+            customerFormMessage.className = "block text-xs mt-2 text-rose-400";
+          }
+        } catch (err) {
+          console.error(err);
+          customerFormMessage.textContent = "Lỗi kết nối server. Vui lòng thử lại.";
+          customerFormMessage.className = "block text-xs mt-2 text-rose-400";
+        }
+      });
+
+      // Make functions available globally
+      window.viewCustomerDetail = viewCustomerDetail;
+      window.editCustomer = editCustomer;
+      window.deleteCustomer = deleteCustomer;
+
+      // Image preview
+      document.getElementById("customerImage").addEventListener("change", (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            document.getElementById("previewImg").src = e.target.result;
+            document.getElementById("customerImagePreview").classList.remove("hidden");
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+
+      // Khởi chạy
+      resetForm();
+      loadCustomers();
+    </script>
+  </body>
+</html>
