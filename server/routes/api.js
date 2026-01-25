@@ -105,12 +105,12 @@ router.post("/order", orderCtrl.createOrder);
 router.put("/order/:id", orderCtrl.updateOrder);
 router.delete("/order/:id", orderCtrl.deleteOrder);
 
-// Cart
-router.get("/cart", cartCtrl.getCartItems);
-router.get("/cart/:id", cartCtrl.getCartItemById);
-router.post("/cart", cartCtrl.createCartItem);
-router.put("/cart/:id", cartCtrl.updateCartItem);
-router.delete("/cart/:id", cartCtrl.deleteCartItem);
+// Cart - Tất cả routes đều cần xác thực token
+router.get("/cart", mdw.api_auth, cartCtrl.getCartItems);
+router.get("/cart/:id", mdw.api_auth, cartCtrl.getCartItemById);
+router.post("/cart", mdw.api_auth, cartCtrl.createCartItem);
+router.put("/cart/:id", mdw.api_auth, cartCtrl.updateCartItem);
+router.delete("/cart/:id", mdw.api_auth, cartCtrl.deleteCartItem);
 
 // Order Detail
 router.get("/order-detail", orderDetailCtrl.getOrderDetails);

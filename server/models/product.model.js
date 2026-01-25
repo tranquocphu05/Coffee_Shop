@@ -6,10 +6,9 @@ const productSchema = new db.mongoose.Schema(
     product_code: { type: String, required: true, unique: true },
     product_name: { type: String, required: true },
     description: { type: String },
-    image: { type: String },
     is_delete: { type: Boolean, default: false },
   },
-  { collection: "product" }
+  { collection: "product" },
 );
 
 const productModel = db.mongoose.model("productModel", productSchema);
