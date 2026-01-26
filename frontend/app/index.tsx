@@ -15,8 +15,8 @@ export default function IndexScreen() {
     try {
       const token = await getAuthToken();
       if (token) {
-        // Đã có token, chuyển đến home
-        router.replace("/home");
+        // Đã có token, chuyển đến tabs (có tab bar)
+        router.replace("/(tabs)");
       } else {
         // Chưa có token (lần đầu), chuyển đến welcome
         router.replace("/welcome");

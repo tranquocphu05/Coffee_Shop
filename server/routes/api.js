@@ -54,6 +54,11 @@ router.post("/account/register", accCtrl.doReg);
 router.post("/account/login/app", accCtrl.doLoginApp);
 router.post("/account/login/web", accCtrl.doLoginWeb);
 router.get("/account/verify", accCtrl.verifyToken);
+router.get("/account/list", mdw.api_auth, accCtrl.GetAllAccount);
+router.get("/account/:id", mdw.api_auth, accCtrl.getAccountById);
+router.put("/account/:id/without-address", mdw.api_auth, upload.single("image"), accCtrl.updateAccountWithoutAddress);
+router.put("/account/:id/with-address", mdw.api_auth, upload.single("image"), accCtrl.updateAccountWithAddress);
+router.delete("/account/:id", mdw.api_auth, accCtrl.deleteAccount);
 
 // Category
 router.get("/category", categoryCtrl.getCategories);
@@ -100,12 +105,12 @@ router.post("/order", orderCtrl.createOrder);
 router.put("/order/:id", orderCtrl.updateOrder);
 router.delete("/order/:id", orderCtrl.deleteOrder);
 
-// Cart
-router.get("/cart", cartCtrl.getCartItems);
-router.get("/cart/:id", cartCtrl.getCartItemById);
-router.post("/cart", cartCtrl.createCartItem);
-router.put("/cart/:id", cartCtrl.updateCartItem);
-router.delete("/cart/:id", cartCtrl.deleteCartItem);
+// Cart - Tất cả routes đều cần xác thực token
+router.get("/cart", mdw.api_auth, cartCtrl.getCartItems);
+router.get("/cart/:id", mdw.api_auth, cartCtrl.getCartItemById);
+router.post("/cart", mdw.api_auth, cartCtrl.createCartItem);
+router.put("/cart/:id", mdw.api_auth, cartCtrl.updateCartItem);
+router.delete("/cart/:id", mdw.api_auth, cartCtrl.deleteCartItem);
 
 // Order Detail
 router.get("/order-detail", orderDetailCtrl.getOrderDetails);

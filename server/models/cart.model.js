@@ -7,15 +7,20 @@ const cartSchema = new db.mongoose.Schema(
       ref: "accModel",
       required: true,
     },
+    product_id: {
+      type: db.mongoose.Schema.Types.ObjectId,
+      ref: "productModel",
+      required: true,
+    },
     variants_id: {
       type: db.mongoose.Schema.Types.ObjectId,
       ref: "productVariantModel",
       required: true,
     },
-    quantity: { type: Number, default: 1 },
-    price: { type: Number, default: 0 },
+    quantity: { type: Number, default: 1, min: 0 },
+    price: { type: Number, default: 0, min: 0 },
   },
-  { collection: "cart" }
+  { collection: "cart" },
 );
 
 const cartModel = db.mongoose.model("cartModel", cartSchema);

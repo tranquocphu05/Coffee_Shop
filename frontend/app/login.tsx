@@ -38,7 +38,7 @@ export default function LoginScreen() {
     try {
       const { token, user } = await loginApp(email.trim(), password);
       await saveAuth(token, user);
-      router.replace("/home");
+      router.replace("/(tabs)");
     } catch (e) {
       setErrorMsg(e instanceof Error ? e.message : "Đăng nhập thất bại");
     } finally {
