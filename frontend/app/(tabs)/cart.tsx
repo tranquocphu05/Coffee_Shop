@@ -14,13 +14,16 @@ import { StatusBar } from "expo-status-bar";
 import { useRouter } from "expo-router";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import {
+  createOrder,
+  createOrderDetail,
+  deleteCartItem,
+  getAccountById,
   getCartItems,
   updateCartItem,
-  deleteCartItem,
   type CartItem,
 } from "@/lib/api";
 import { API_BASE_URL } from "@/constants/api";
-import { clearAuth } from "@/lib/auth";
+import { clearAuth, getAuthUser } from "@/lib/auth";
 
 interface GroupedCartItem {
   product_id: string;
@@ -41,6 +44,7 @@ export default function CartScreen() {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
+  const [paying, setPaying] = useState(false);
 
   useEffect(() => {
     loadCartItems();
@@ -133,21 +137,28 @@ export default function CartScreen() {
     const grouped: Record<string, GroupedCartItem> = {};
 
     cartItems.forEach((item) => {
-      const productId = item.variants_id?.product_id?._id;
-      if (!productId) return;
+      const productId =
+        item.variants_id?.product_id?._id ||
+        item.variants_id?._id ||
+        item._id;
 
       if (!grouped[productId]) {
         // Tìm variant có image đầu tiên để làm image chính
         const variantWithImage = cartItems.find(
           (i) =>
-            i.variants_id?.product_id?._id === productId &&
-            i.variants_id?.image
+            (i.variants_id?.product_id?._id ||
+              i.variants_id?._id ||
+              i._id) === productId && i.variants_id?.image
         );
 
         grouped[productId] = {
           product_id: productId,
-          product_name: item.variants_id?.product_id?.product_name || "Sản phẩm",
-          description: item.variants_id?.product_id?.description,
+          product_name:
+            item.variants_id?.product_id?.product_name ||
+            item.variants_id?.sku ||
+            "Sản phẩm",
+          description:
+            item.variants_id?.product_id?.description || item.variants_id?.size,
           image: variantWithImage?.variants_id?.image || item.variants_id?.image,
           variants: [],
         };
@@ -229,6 +240,52 @@ export default function CartScreen() {
         },
       ]
     );
+  };
+
+  const handlePay = async () => {
+    if (cartItems.length === 0) return;
+    try {
+      setPaying(true);
+      const authUser = await getAuthUser();
+      const userId = (authUser as { _id?: string })?._id;
+      if (!userId) {
+        Alert.alert("Lỗi", "Không tìm thấy thông tin người dùng.");
+        return;
+      }
+
+      const account = await getAccountById(userId);
+      const addressId = account.addresses?.[0]?._id;
+      if (!addressId) {
+        Alert.alert("Thiếu địa chỉ", "Vui lòng cập nhật địa chỉ giao hàng.");
+        return;
+      }
+
+      const order = await createOrder(userId, addressId, "pending", totalPrice);
+
+      await Promise.all(
+        cartItems.map((item) => {
+          const variantId = item.variants_id?._id;
+          if (!variantId) return Promise.resolve();
+          return createOrderDetail(
+            order._id,
+            variantId,
+            item.quantity,
+            item.price
+          );
+        })
+      );
+
+      await Promise.all(cartItems.map((item) => deleteCartItem(item._id)));
+      await loadCartItems();
+
+      Alert.alert("Thành công", "Đã tạo đơn hàng.");
+      router.replace("/(tabs)/notifications");
+    } catch (error) {
+      console.error("Error creating order:", error);
+      Alert.alert("Lỗi", "Không thể tạo đơn hàng. Vui lòng thử lại.");
+    } finally {
+      setPaying(false);
+    }
   };
 
   if (loading) {
@@ -393,8 +450,14 @@ export default function CartScreen() {
             <Text style={styles.totalLabel}>Total Price</Text>
             <Text style={styles.totalPrice}>$ {totalPrice.toFixed(2)}</Text>
           </View>
-          <TouchableOpacity style={styles.payButton}>
-            <Text style={styles.payButtonText}>Pay</Text>
+          <TouchableOpacity
+            style={[styles.payButton, paying && styles.payButtonDisabled]}
+            onPress={handlePay}
+            disabled={paying}
+          >
+            <Text style={styles.payButtonText}>
+              {paying ? "Processing..." : "Pay"}
+            </Text>
           </TouchableOpacity>
         </View>
       )}
@@ -598,6 +661,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 40,
     paddingVertical: 16,
     minWidth: 120,
+  },
+  payButtonDisabled: {
+    opacity: 0.7,
   },
   payButtonText: {
     fontSize: 18,
