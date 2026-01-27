@@ -29,11 +29,11 @@ exports.createProductVariant = async (req, res) => {
       return res.status(400).json({ error: "Invalid product id" });
     }
 
-    if (typeof quantity !== "undefined" && !Number.isFinite(Number(quantity))) {
+    if (typeof quantity === "undefined" || !Number.isFinite(Number(quantity))) {
       return res.status(400).json({ error: "Invalid quantity" });
     }
 
-    if (typeof price !== "undefined" && !Number.isFinite(Number(price))) {
+    if (typeof price === "undefined" || !Number.isFinite(Number(price))) {
       return res.status(400).json({ error: "Invalid price" });
     }
 
@@ -81,7 +81,9 @@ exports.getProductVariants = async (req, res) => {
       filter.product_id = product_id;
     }
 
-    const variants = await productVariantModel.find(filter);
+    const variants = await productVariantModel
+      .find(filter)
+      .populate("product_id", "product_name description product_code category_id");
     return res.status(200).json({ data: { variants } });
   } catch (error) {
     console.log(error.message);

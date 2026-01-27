@@ -162,6 +162,180 @@ export async function registerApp(name: string, email: string, pass: string) {
   }
 }
 
+export type Product = {
+  _id: string;
+  category_id?: string;
+  product_code: string;
+  product_name: string;
+  description?: string;
+  is_delete?: boolean;
+};
+
+export type Category = {
+  _id: string;
+  category_code: string;
+  category_name: string;
+  is_delete?: boolean;
+};
+
+export type ProductVariant = {
+  _id: string;
+  sku: string;
+  product_id:
+    | string
+    | {
+        _id: string;
+        product_code?: string;
+        product_name?: string;
+        description?: string;
+        category_id?: string;
+      };
+  size?: string;
+  quantity: number;
+  price: number;
+  image?: string;
+  is_delete?: boolean;
+};
+
+export type ProductWithVariants = Product & {
+  variants: ProductVariant[];
+  image?: string;
+};
+
+type ProductsResponse = {
+  message?: string;
+  data?: { products?: Product[] };
+  error?: string;
+};
+
+type ProductResponse = {
+  message?: string;
+  data?: { product?: Product };
+  error?: string;
+};
+
+type ProductVariantsResponse = {
+  message?: string;
+  data?: { variants?: ProductVariant[] };
+  error?: string;
+};
+
+type CategoriesResponse = {
+  message?: string;
+  data?: { categories?: Category[] };
+  error?: string;
+};
+
+export async function getProducts(): Promise<Product[]> {
+  const url = '/api/product';
+
+  try {
+    const response = await apiClient.get<ProductsResponse>(url);
+    const json = response.data;
+
+    if (!json.data?.products) {
+      throw new Error('Phản hồi từ server không hợp lệ');
+    }
+
+    return json.data.products;
+  } catch (error) {
+    console.error('[API] Get products error:', error);
+    throw error;
+  }
+}
+
+export async function getProductById(productId: string): Promise<Product> {
+  const url = `/api/product/${productId}`;
+
+  try {
+    const response = await apiClient.get<ProductResponse>(url);
+    const json = response.data;
+
+    if (!json.data?.product) {
+      throw new Error('Phản hồi từ server không hợp lệ');
+    }
+
+    return json.data.product;
+  } catch (error) {
+    console.error('[API] Get product by id error:', error);
+    throw error;
+  }
+}
+
+export async function getProductVariants(productId?: string): Promise<ProductVariant[]> {
+  const url = '/api/product-variant';
+
+  try {
+    const response = await apiClient.get<ProductVariantsResponse>(url, {
+      params: productId ? { product_id: productId } : undefined,
+    });
+    const json = response.data;
+
+    if (!json.data?.variants) {
+      throw new Error('Phản hồi từ server không hợp lệ');
+    }
+
+    return json.data.variants;
+  } catch (error) {
+    console.error('[API] Get product variants error:', error);
+    throw error;
+  }
+}
+
+export async function getCategories(): Promise<Category[]> {
+  const url = '/api/category';
+
+  try {
+    const response = await apiClient.get<CategoriesResponse>(url);
+    const json = response.data;
+
+    if (!json.data?.categories) {
+      throw new Error('Phản hồi từ server không hợp lệ');
+    }
+
+    return json.data.categories;
+  } catch (error) {
+    console.error('[API] Get categories error:', error);
+    throw error;
+  }
+}
+
+export async function getProductsWithVariants(): Promise<ProductWithVariants[]> {
+  try {
+    const [products, variants] = await Promise.all([
+      getProducts(),
+      getProductVariants(),
+    ]);
+
+    const variantsByProductId = variants.reduce<Record<string, ProductVariant[]>>(
+      (acc, variant) => {
+        const productId =
+          typeof variant.product_id === 'string'
+            ? variant.product_id
+            : variant.product_id?._id;
+        if (!productId) return acc;
+        if (!acc[productId]) acc[productId] = [];
+        acc[productId].push(variant);
+        return acc;
+      },
+      {}
+    );
+
+    return products.map((product) => {
+      const productVariants = variantsByProductId[product._id] || [];
+      const image = productVariants.find((variant) => variant.image)?.image;
+      return {
+        ...product,
+        variants: productVariants,
+        image,
+      };
+    });
+  } catch (error) {
+    console.error('[API] Get products with variants error:', error);
+    throw error;
+  }
+}
+
 // Cart Types
 export interface CartItem {
   _id: string;
@@ -183,9 +357,44 @@ export interface CartItem {
   price: number;
 }
 
+export type Address = {
+  _id: string;
+  account_id: string;
+  name: string;
+  phone: string;
+  address: string;
+};
+
+export type Account = {
+  _id: string;
+  name?: string;
+  email?: string;
+  phone?: string | null;
+  address?: string | null;
+  addresses?: Address[];
+};
+
 type CartResponse = {
   message?: string;
   data?: { carts?: CartItem[]; cart?: CartItem };
+  error?: string;
+};
+
+type AccountResponse = {
+  message?: string;
+  data?: { customer?: Account };
+  error?: string;
+};
+
+type OrderResponse = {
+  message?: string;
+  data?: { order?: { _id: string } };
+  error?: string;
+};
+
+type OrderDetailResponse = {
+  message?: string;
+  data?: { order_detail?: { _id: string } };
   error?: string;
 };
 
@@ -208,21 +417,104 @@ export async function getCartItems(): Promise<CartItem[]> {
   }
 }
 
+export async function getAccountById(accountId: string): Promise<Account> {
+  const url = `/api/account/${accountId}`;
+
+  try {
+    const response = await apiClient.get<AccountResponse>(url);
+    const json = response.data;
+
+    if (!json.data?.customer) {
+      throw new Error('Phản hồi từ server không hợp lệ');
+    }
+
+    return json.data.customer;
+  } catch (error) {
+    console.error('[API] Get account by id error:', error);
+    throw error;
+  }
+}
+
+export async function createOrder(
+  user_id: string,
+  address_id: string,
+  status: string,
+  total_amount: number
+): Promise<{ _id: string }> {
+  const url = '/api/order';
+
+  try {
+    const response = await apiClient.post<OrderResponse>(url, {
+      user_id,
+      address_id,
+      status,
+      total_amount,
+    });
+    const json = response.data;
+
+    if (!json.data?.order) {
+      throw new Error('Phản hồi từ server không hợp lệ');
+    }
+
+    return json.data.order;
+  } catch (error) {
+    console.error('[API] Create order error:', error);
+    throw error;
+  }
+}
+
+export async function createOrderDetail(
+  order_id: string,
+  variants_id: string,
+  quantity: number,
+  price: number
+): Promise<{ _id: string }> {
+  const url = '/api/order-detail';
+
+  try {
+    const response = await apiClient.post<OrderDetailResponse>(url, {
+      order_id,
+      variants_id,
+      quantity,
+      price,
+    });
+    const json = response.data;
+
+    if (!json.data?.order_detail) {
+      throw new Error('Phản hồi từ server không hợp lệ');
+    }
+
+    return json.data.order_detail;
+  } catch (error) {
+    console.error('[API] Create order detail error:', error);
+    throw error;
+  }
+}
+
 // Create cart item
 export async function createCartItem(
   variants_id: string,
   quantity: number = 1,
-  price?: number
+  price?: number,
+  product_id?: string
 ): Promise<CartItem> {
   const url = '/api/cart';
   
   try {
-    const body: { variants_id: string; quantity: number; price?: number } = {
+    const body: {
+      variants_id: string;
+      quantity: number;
+      price?: number;
+      product_id?: string;
+    } = {
       variants_id,
       quantity,
     };
     if (price !== undefined) {
       body.price = price;
+    }
+    if (product_id) {
+      body.product_id = product_id;
     }
     
     const response = await apiClient.post<CartResponse>(url, body);

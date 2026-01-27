@@ -10,7 +10,7 @@ const cartSchema = new db.mongoose.Schema(
     product_id: {
       type: db.mongoose.Schema.Types.ObjectId,
       ref: "productModel",
-      required: true,
+      required: false,
     },
     variants_id: {
       type: db.mongoose.Schema.Types.ObjectId,

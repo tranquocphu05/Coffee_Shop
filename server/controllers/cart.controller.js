@@ -8,7 +8,7 @@ exports.createCartItem = async (req, res) => {
   try {
     // Lấy user_id từ token (đã được xác thực bởi middleware)
     const user_id = req.user._id;
-    const { variants_id, quantity, price } = req.body;
+    const { variants_id, quantity, price, product_id } = req.body;
 
     if (!variants_id) {
       return res.status(400).json({ error: "Missing variants_id" });
@@ -36,6 +36,28 @@ exports.createCartItem = async (req, res) => {
       ? Number(price) 
       : variant.price;
 
+    let productId = null;
+
+    if (typeof product_id !== "undefined" && product_id !== "") {
+      if (!mongoose.Types.ObjectId.isValid(product_id)) {
+        return res.status(400).json({ error: "Invalid product id" });
+      }
+      productId = product_id;
+    }
+
+    if (!productId) {
+      productId =
+        typeof variant.product_id === "string"
+          ? variant.product_id
+          : variant.product_id?._id
+            ? variant.product_id._id.toString()
+            : variant.product_id?.toString();
+    }
+
+    if (!productId) {
+      return res.status(400).json({ error: "Missing product_id" });
+    }
+
     // Kiểm tra xem item đã tồn tại trong cart chưa
     const existingCartItem = await cartModel.findOne({
       user_id,
@@ -45,6 +67,9 @@ exports.createCartItem = async (req, res) => {
     if (existingCartItem) {
       // Nếu đã tồn tại, cập nhật quantity
       existingCartItem.quantity += finalQuantity;
+      if (!existingCartItem.product_id) {
+        existingCartItem.product_id = productId;
+      }
       const updatedCartItem = await existingCartItem.save();
       
       // Populate để trả về đầy đủ thông tin
@@ -61,6 +86,7 @@ exports.createCartItem = async (req, res) => {
 
     const cartItem = new cartModel({
       user_id,
+      product_id: productId,
       variants_id,
       quantity: finalQuantity,
       price: finalPrice,
