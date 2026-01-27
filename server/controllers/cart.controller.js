@@ -18,7 +18,8 @@ exports.createCartItem = async (req, res) => {
       return res.status(400).json({ error: "Invalid variants id" });
     }
 
-    const finalQuantity = typeof quantity !== "undefined" ? Number(quantity) : 1;
+    const finalQuantity =
+      typeof quantity !== "undefined" ? Number(quantity) : 1;
     if (!Number.isFinite(finalQuantity) || finalQuantity < 1) {
       return res.status(400).json({ error: "Invalid quantity" });
     }
@@ -32,9 +33,10 @@ exports.createCartItem = async (req, res) => {
     }
 
     // Sử dụng price từ variant nếu không được cung cấp
-    const finalPrice = typeof price !== "undefined" && Number.isFinite(Number(price)) 
-      ? Number(price) 
-      : variant.price;
+    const finalPrice =
+      typeof price !== "undefined" && Number.isFinite(Number(price))
+        ? Number(price)
+        : variant.price;
 
     // Kiểm tra xem item đã tồn tại trong cart chưa
     const existingCartItem = await cartModel.findOne({
@@ -46,7 +48,7 @@ exports.createCartItem = async (req, res) => {
       // Nếu đã tồn tại, cập nhật quantity
       existingCartItem.quantity += finalQuantity;
       const updatedCartItem = await existingCartItem.save();
-      
+
       // Populate để trả về đầy đủ thông tin
       await updatedCartItem.populate({
         path: "variants_id",
@@ -67,7 +69,7 @@ exports.createCartItem = async (req, res) => {
     });
 
     const newCartItem = await cartItem.save();
-    
+
     // Populate để trả về đầy đủ thông tin
     await newCartItem.populate({
       path: "variants_id",
@@ -118,12 +120,10 @@ exports.getCartItemById = async (req, res) => {
       return res.status(400).json({ error: "Invalid cart id" });
     }
 
-    const cart = await cartModel
-      .findOne({ _id: id, user_id })
-      .populate({
-        path: "variants_id",
-        populate: { path: "product_id" },
-      });
+    const cart = await cartModel.findOne({ _id: id, user_id }).populate({
+      path: "variants_id",
+      populate: { path: "product_id" },
+    });
 
     if (!cart) {
       return res.status(404).json({ error: "Cart not found" });

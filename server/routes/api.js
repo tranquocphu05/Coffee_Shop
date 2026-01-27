@@ -10,6 +10,7 @@ var categoryCtrl = require("../controllers/category.controller");
 var orderCtrl = require("../controllers/order.controller");
 var cartCtrl = require("../controllers/cart.controller");
 var orderDetailCtrl = require("../controllers/order_detail.controller");
+var vnpayCtrl = require("../controllers/vnpay.controller");
 var jwt = require("jsonwebtoken");
 var mdw = require("../middleware/api.auth");
 
@@ -19,12 +20,7 @@ if (!fs.existsSync(tempDir)) {
 }
 var maxFileSize = 2 * 1024 * 1024; // 2MB
 var allowedExtensions = [".jpg", ".jpeg", ".png", ".webp", ".gif"];
-var allowedMimeTypes = [
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-  "image/gif",
-];
+var allowedMimeTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 
 var upload = multer({
   dest: tempDir,
@@ -56,8 +52,18 @@ router.post("/account/login/web", accCtrl.doLoginWeb);
 router.get("/account/verify", accCtrl.verifyToken);
 router.get("/account/list", mdw.api_auth, accCtrl.GetAllAccount);
 router.get("/account/:id", mdw.api_auth, accCtrl.getAccountById);
-router.put("/account/:id/without-address", mdw.api_auth, upload.single("image"), accCtrl.updateAccountWithoutAddress);
-router.put("/account/:id/with-address", mdw.api_auth, upload.single("image"), accCtrl.updateAccountWithAddress);
+router.put(
+  "/account/:id/without-address",
+  mdw.api_auth,
+  upload.single("image"),
+  accCtrl.updateAccountWithoutAddress,
+);
+router.put(
+  "/account/:id/with-address",
+  mdw.api_auth,
+  upload.single("image"),
+  accCtrl.updateAccountWithAddress,
+);
 router.delete("/account/:id", mdw.api_auth, accCtrl.deleteAccount);
 
 // Category
@@ -80,22 +86,22 @@ router.get("/product-variant/:id", productVariantCtrl.getProductVariantById);
 router.post(
   "/product-variant",
   mdw.api_auth,
-  productVariantCtrl.createProductVariant
+  productVariantCtrl.createProductVariant,
 );
 router.put(
   "/product-variant/:id",
   mdw.api_auth,
-  productVariantCtrl.updateProductVariant
+  productVariantCtrl.updateProductVariant,
 );
 router.delete(
   "/product-variant/:id",
   mdw.api_auth,
-  productVariantCtrl.deleteProductVariant
+  productVariantCtrl.deleteProductVariant,
 );
 router.post(
   "/product-variant/:id/image",
   uploadProductVariantImage,
-  productVariantCtrl.uploadProductVariantImage
+  productVariantCtrl.uploadProductVariantImage,
 );
 
 // Order
@@ -118,5 +124,12 @@ router.get("/order-detail/:id", orderDetailCtrl.getOrderDetailById);
 router.post("/order-detail", orderDetailCtrl.createOrderDetail);
 router.put("/order-detail/:id", orderDetailCtrl.updateOrderDetail);
 router.delete("/order-detail/:id", orderDetailCtrl.deleteOrderDetail);
+
+// VNPAY
+router.post(
+  "/vnpay/create-payment-url",
+  mdw.api_auth,
+  vnpayCtrl.createPaymentUrl,
+);
 
 module.exports = router;

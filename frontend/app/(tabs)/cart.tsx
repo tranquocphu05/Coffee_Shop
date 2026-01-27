@@ -13,14 +13,11 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { useRouter } from "expo-router";
 import { IconSymbol } from "@/components/ui/icon-symbol";
-import {
-  getCartItems,
-  updateCartItem,
-  deleteCartItem,
-  type CartItem,
-} from "@/lib/api";
+import { getCartItems, updateCartItem, deleteCartItem } from "@/lib/cart.api";
+import { type CartItem } from "@/lib/types/cart";
 import { API_BASE_URL } from "@/constants/api";
 import { clearAuth } from "@/lib/auth";
+import { formatCurrency } from "@/lib/format.money";
 
 interface GroupedCartItem {
   product_id: string;
@@ -54,7 +51,7 @@ export default function CartScreen() {
       setCartItems(items);
     } catch (error: any) {
       console.error("Error loading cart items:", error);
-      
+
       // Nếu là lỗi xác thực, redirect về login
       if (
         error?.message?.includes("Không xác định") ||
@@ -62,16 +59,12 @@ export default function CartScreen() {
         error?.message?.includes("xác thực")
       ) {
         await clearAuth();
-        Alert.alert(
-          "Phiên đăng nhập đã hết hạn",
-          "Vui lòng đăng nhập lại",
-          [
-            {
-              text: "Đăng nhập",
-              onPress: () => router.replace("/login"),
-            },
-          ]
-        );
+        Alert.alert("Phiên đăng nhập đã hết hạn", "Vui lòng đăng nhập lại", [
+          {
+            text: "Đăng nhập",
+            onPress: () => router.replace("/login"),
+          },
+        ]);
       } else {
         Alert.alert("Lỗi", "Không thể tải giỏ hàng. Vui lòng thử lại.");
       }
@@ -80,11 +73,15 @@ export default function CartScreen() {
     }
   };
 
-  const updateQuantity = async (cartId: string, currentQuantity: number, change: number) => {
+  const updateQuantity = async (
+    cartId: string,
+    currentQuantity: number,
+    change: number,
+  ) => {
     const newQuantity = currentQuantity + change;
-    
+
     if (newQuantity < 0) return;
-    
+
     try {
       setUpdating(cartId);
       await updateCartItem(cartId, newQuantity);
@@ -124,7 +121,7 @@ export default function CartScreen() {
             }
           },
         },
-      ]
+      ],
     );
   };
 
@@ -141,14 +138,16 @@ export default function CartScreen() {
         const variantWithImage = cartItems.find(
           (i) =>
             i.variants_id?.product_id?._id === productId &&
-            i.variants_id?.image
+            i.variants_id?.image,
         );
 
         grouped[productId] = {
           product_id: productId,
-          product_name: item.variants_id?.product_id?.product_name || "Sản phẩm",
+          product_name:
+            item.variants_id?.product_id?.product_name || "Sản phẩm",
           description: item.variants_id?.product_id?.description,
-          image: variantWithImage?.variants_id?.image || item.variants_id?.image,
+          image:
+            variantWithImage?.variants_id?.image || item.variants_id?.image,
           variants: [],
         };
       }
@@ -200,7 +199,7 @@ export default function CartScreen() {
   const removeProduct = async (productId: string) => {
     // Xóa tất cả variants của product này
     const itemsToDelete = cartItems.filter(
-      (item) => item.variants_id?.product_id?._id === productId
+      (item) => item.variants_id?.product_id?._id === productId,
     );
 
     Alert.alert(
@@ -218,7 +217,7 @@ export default function CartScreen() {
             try {
               // Xóa tất cả items của product này
               await Promise.all(
-                itemsToDelete.map((item) => deleteCartItem(item._id))
+                itemsToDelete.map((item) => deleteCartItem(item._id)),
               );
               await loadCartItems();
             } catch (error) {
@@ -227,7 +226,7 @@ export default function CartScreen() {
             }
           },
         },
-      ]
+      ],
     );
   };
 
@@ -319,8 +318,11 @@ export default function CartScreen() {
                               </Text>
                             </View>
                           )}
-                          <Text style={styles.optionPrice}>
+                          {/* <Text style={styles.optionPrice}>
                             $ {variant.price.toFixed(2)}
+                          </Text> */}
+                          <Text style={styles.optionPrice}>
+                            {formatCurrency(variant.price, "VND")}
                           </Text>
                         </View>
                         <View style={styles.quantityContainer}>
@@ -333,16 +335,13 @@ export default function CartScreen() {
                               updateQuantity(
                                 variant.cartId,
                                 variant.quantity,
-                                -1
+                                -1,
                               )
                             }
                             disabled={isUpdating}
                           >
                             {isUpdating ? (
-                              <ActivityIndicator
-                                size="small"
-                                color="#FFFFFF"
-                              />
+                              <ActivityIndicator size="small" color="#FFFFFF" />
                             ) : (
                               <Text style={styles.quantityButtonText}>-</Text>
                             )}
@@ -361,16 +360,13 @@ export default function CartScreen() {
                               updateQuantity(
                                 variant.cartId,
                                 variant.quantity,
-                                1
+                                1,
                               )
                             }
                             disabled={isUpdating}
                           >
                             {isUpdating ? (
-                              <ActivityIndicator
-                                size="small"
-                                color="#FFFFFF"
-                              />
+                              <ActivityIndicator size="small" color="#FFFFFF" />
                             ) : (
                               <Text style={styles.quantityButtonText}>+</Text>
                             )}
@@ -391,9 +387,22 @@ export default function CartScreen() {
         <View style={styles.footer}>
           <View style={styles.totalContainer}>
             <Text style={styles.totalLabel}>Total Price</Text>
-            <Text style={styles.totalPrice}>$ {totalPrice.toFixed(2)}</Text>
+            {/* <Text style={styles.totalPrice}>$ {totalPrice.toFixed(2)}</Text> */}
+            <Text style={styles.totalPrice}>
+              {formatCurrency(totalPrice, "VND")}
+            </Text>
           </View>
-          <TouchableOpacity style={styles.payButton}>
+          <TouchableOpacity
+            style={styles.payButton}
+            onPress={() =>
+              router.push({
+                pathname: "/payment",
+                params: {
+                  totalPrice: totalPrice.toString(),
+                },
+              })
+            }
+          >
             <Text style={styles.payButtonText}>Pay</Text>
           </TouchableOpacity>
         </View>

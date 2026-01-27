@@ -14,7 +14,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { Link, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { registerApp } from "@/lib/api";
+import { registerApp } from "@/lib/auth.api";
 import Logo from "@/assets/svg/logo.svg";
 
 export default function RegisterScreen() {

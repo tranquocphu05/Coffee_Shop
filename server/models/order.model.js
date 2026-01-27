@@ -15,7 +15,7 @@ const orderSchema = new db.mongoose.Schema(
     status: { type: String, required: true },
     total_amount: { type: Number, default: 0 },
   },
-  { collection: "order" }
+  { collection: "order", timestamps: true },
 );
 
 const orderModel = db.mongoose.model("orderModel", orderSchema);

@@ -10,6 +10,10 @@ var apisRouter = require("./routes/api");
 
 var app = express();
 
+// Trust proxy để hỗ trợ ngrok và reverse proxy
+// Cho phép đọc x-forwarded-* headers
+app.set('trust proxy', true);
+
 app.set("views", path.join(__dirname, "views"));
 app.set("view engine", "ejs");
 
@@ -17,7 +21,7 @@ app.set("view engine", "ejs");
 app.use(cors({
   origin: '*', // Cho phép tất cả origin (trong production nên giới hạn)
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Forwarded-For', 'X-Forwarded-Proto', 'X-Forwarded-Host'],
   credentials: true
 }));
 

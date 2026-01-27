@@ -11,7 +11,7 @@ const addressSchema = new db.mongoose.Schema(
     phone: { type: String, required: true },
     address: { type: String, required: true },
   },
-  { collection: "Address" },
+  { collection: "address" },
 );
 
 let addressModel = db.mongoose.model("addressModel", addressSchema);

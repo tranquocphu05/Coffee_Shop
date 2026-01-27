@@ -14,7 +14,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { Link, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { loginApp } from "@/lib/api";
+import { loginApp } from "@/lib/auth.api";
 import { saveAuth } from "@/lib/auth";
 import Logo from "@/assets/svg/logo.svg";
 
