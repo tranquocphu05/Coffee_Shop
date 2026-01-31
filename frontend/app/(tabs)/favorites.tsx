@@ -13,6 +13,7 @@ import { StatusBar } from "expo-status-bar";
 import * as SecureStore from "expo-secure-store";
 import { useRouter } from "expo-router";
 import { Image } from "expo-image";
+import { Ionicons } from "@expo/vector-icons";
 import { API_BASE_URL } from "@/constants/api";
 import { getProductsWithVariants, type ProductWithVariants } from "@/lib/api";
 import { useFocusEffect } from "@react-navigation/native";
@@ -108,7 +109,21 @@ export default function FavoritesScreen() {
     <SafeAreaView style={styles.container} edges={["top"]}>
       <StatusBar style="light" />
       <View style={styles.header}>
-        <Text style={styles.title}>Favorites</Text>
+        <TouchableOpacity
+          style={styles.headerIconButton}
+          onPress={() => router.push("/settings")}
+        >
+          <Ionicons name="grid" size={20} color="#F8FAFC" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Yêu thích</Text>
+        <TouchableOpacity
+          style={styles.headerAvatarButton}
+          onPress={() => router.push("/(tabs)/profile")}
+        >
+          <Ionicons name="person" size={18} color="#F8FAFC" />
+        </TouchableOpacity>
+      </View>
+      <View style={styles.headerActions}>
         <TouchableOpacity style={styles.refreshButton} onPress={loadData}>
           <Text style={styles.refreshText}>Tải lại</Text>
         </TouchableOpacity>
@@ -184,11 +199,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#000000",
   },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#FFFFFF",
-  },
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -196,6 +206,34 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 12,
     paddingBottom: 8,
+  },
+  headerIconButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    backgroundColor: "#1B2430",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerTitle: {
+    flex: 1,
+    textAlign: "center",
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#FFFFFF",
+  },
+  headerAvatarButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#1B2430",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerActions: {
+    paddingHorizontal: 20,
+    alignItems: "flex-end",
+    marginBottom: 8,
   },
   refreshButton: {
     backgroundColor: "#1F242A",

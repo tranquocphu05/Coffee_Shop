@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   StyleSheet,
   View,
@@ -24,6 +24,7 @@ import {
 } from "@/lib/api";
 import { API_BASE_URL } from "@/constants/api";
 import { clearAuth, getAuthUser } from "@/lib/auth";
+import { useFocusEffect } from "@react-navigation/native";
 
 interface GroupedCartItem {
   product_id: string;
@@ -49,6 +50,12 @@ export default function CartScreen() {
   useEffect(() => {
     loadCartItems();
   }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadCartItems();
+    }, [])
+  );
 
   const loadCartItems = async () => {
     try {
@@ -308,7 +315,7 @@ export default function CartScreen() {
         <TouchableOpacity style={styles.headerIcon}>
           <IconSymbol name="grid" size={24} color="#FFFFFF" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Cart</Text>
+        <Text style={styles.headerTitle}>Giỏ hàng</Text>
         <View style={styles.headerRight}>
           <View style={styles.profileIcon}>
             <IconSymbol name="person.circle.fill" size={24} color="#FFFFFF" />
@@ -447,7 +454,7 @@ export default function CartScreen() {
       {cartItems.length > 0 && (
         <View style={styles.footer}>
           <View style={styles.totalContainer}>
-            <Text style={styles.totalLabel}>Total Price</Text>
+            <Text style={styles.totalLabel}>Tổng tiền</Text>
             <Text style={styles.totalPrice}>$ {totalPrice.toFixed(2)}</Text>
           </View>
           <TouchableOpacity
@@ -456,7 +463,7 @@ export default function CartScreen() {
             disabled={paying}
           >
             <Text style={styles.payButtonText}>
-              {paying ? "Processing..." : "Pay"}
+              {paying ? "Đang xử lý..." : "Thanh toán"}
             </Text>
           </TouchableOpacity>
         </View>

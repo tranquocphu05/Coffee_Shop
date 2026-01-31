@@ -15,7 +15,7 @@ import { StatusBar } from "expo-status-bar";
 import { Link, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { registerApp } from "@/lib/api";
-import Logo from "@/assets/svg/logo.svg";
+import { Image } from "expo-image";
 
 export default function RegisterScreen() {
   const [fullName, setFullName] = useState("");
@@ -27,6 +27,14 @@ export default function RegisterScreen() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+
+  const getRegisterErrorMessage = (error: unknown) => {
+    const message = error instanceof Error ? error.message : "Đăng ký thất bại";
+    if (/email already exists/i.test(message)) {
+      return "Email đã tồn tại. Vui lòng đăng nhập hoặc dùng email khác.";
+    }
+    return message;
+  };
 
   const handleRegister = async () => {
     setErrorMsg(null);
@@ -77,7 +85,7 @@ export default function RegisterScreen() {
       router.replace("/login");
     } catch (e) {
       // Hiển thị lỗi màu đỏ dưới ô confirmPassword
-      setErrorMsg(e instanceof Error ? e.message : "Đăng ký thất bại");
+      setErrorMsg(getRegisterErrorMessage(e));
     } finally {
       setLoading(false);
     }
@@ -97,18 +105,22 @@ export default function RegisterScreen() {
         >
           {/* Logo Section */}
           <View style={styles.logoContainer}>
-            <Logo width={120} height={120} />
+            <Image
+              source={require("@/assets/images/react-logo.png")}
+              style={styles.logoImage}
+              contentFit="contain"
+            />
           </View>
 
           {/* Welcome Text */}
-          <Text style={styles.welcomeText}>Welcome to Lungo !!</Text>
-          <Text style={styles.subtitleText}>Create Account to Continue</Text>
+          <Text style={styles.welcomeText}>Chào mừng đến với Lungo!!</Text>
+          <Text style={styles.subtitleText}>Tạo tài khoản để tiếp tục</Text>
 
           {/* Input Fields */}
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.input}
-              placeholder="Full Name"
+              placeholder="Họ và tên"
               placeholderTextColor="#9BA1A6"
               value={fullName}
               onChangeText={(t) => {
@@ -121,7 +133,7 @@ export default function RegisterScreen() {
 
             <TextInput
               style={styles.input}
-              placeholder="Email Address"
+              placeholder="Email"
               placeholderTextColor="#9BA1A6"
               value={email}
               onChangeText={(t) => {
@@ -139,7 +151,7 @@ export default function RegisterScreen() {
                   styles.passwordInput,
                   errorMsg ? styles.inputErrorBorder : null,
                 ]}
-                placeholder="Password"
+                placeholder="Mật khẩu"
                 placeholderTextColor="#9BA1A6"
                 value={password}
                 onChangeText={(t) => {
@@ -168,7 +180,7 @@ export default function RegisterScreen() {
                   styles.passwordInput,
                   errorMsg ? styles.inputErrorBorder : null,
                 ]}
-                placeholder="Confirm Password"
+                placeholder="Xác nhận mật khẩu"
                 placeholderTextColor="#9BA1A6"
                 value={confirmPassword}
                 onChangeText={(t) => {
@@ -204,16 +216,16 @@ export default function RegisterScreen() {
             disabled={loading}
           >
             <Text style={styles.registerText}>
-              {loading ? "Creating Account..." : "Register"}
+              {loading ? "Đang tạo tài khoản..." : "Đăng ký"}
             </Text>
           </TouchableOpacity>
 
           {/* Links */}
           <View style={styles.linksContainer}>
             <Text style={styles.linkText}>
-              Already have account? Click{" "}
+              Đã có tài khoản?{" "}
               <Link href="/login" asChild>
-                <Text style={styles.linkHighlight}>Login</Text>
+                <Text style={styles.linkHighlight}>Đăng nhập</Text>
               </Link>
             </Text>
           </View>
@@ -241,6 +253,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 40,
+    height: 120,
+  },
+  logoImage: {
+    width: 120,
     height: 120,
   },
   welcomeText: {

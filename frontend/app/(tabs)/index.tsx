@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   StyleSheet,
   View,
@@ -12,8 +12,9 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { useRouter } from "expo-router";
-import { clearAuth } from "@/lib/auth";
+import { getAuthUser } from "@/lib/auth";
 import { Image } from "expo-image";
+import { Ionicons } from "@expo/vector-icons";
 import {
   createCartItem,
   getCategories,
@@ -23,6 +24,7 @@ import {
 } from "@/lib/api";
 import * as SecureStore from "expo-secure-store";
 import { API_BASE_URL } from "@/constants/api";
+import { useFocusEffect } from "@react-navigation/native";
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -34,37 +36,33 @@ export default function HomeScreen() {
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategoryId, setSelectedCategoryId] = useState("all");
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
   useEffect(() => {
     loadProducts();
     loadCategories();
     loadFavoriteIds();
+    loadAvatar();
   }, []);
 
-  const handleLogout = () => {
-    Alert.alert(
-      "Đăng xuất",
-      "Bạn có chắc chắn muốn đăng xuất?",
-      [
-        {
-          text: "Hủy",
-          style: "cancel",
-        },
-        {
-          text: "Đăng xuất",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await clearAuth();
-              router.replace("/login");
-            } catch (error) {
-              console.error("Error logging out:", error);
-              Alert.alert("Lỗi", "Không thể đăng xuất. Vui lòng thử lại.");
-            }
-          },
-        },
-      ]
-    );
+  useFocusEffect(
+    useCallback(() => {
+      loadFavoriteIds();
+      loadAvatar();
+    }, [])
+  );
+
+  const loadAvatar = async () => {
+    try {
+      const user = (await getAuthUser()) as { image?: string } | null;
+      if (user?.image) {
+        setAvatarUrl(`${API_BASE_URL}/images/avatars/${user.image}`);
+      } else {
+        setAvatarUrl(null);
+      }
+    } catch {
+      setAvatarUrl(null);
+    }
   };
 
   const loadProducts = async () => {
@@ -217,12 +215,26 @@ export default function HomeScreen() {
       >
         <View style={styles.content}>
           <View style={styles.header}>
-            <Text style={styles.title}>Home</Text>
             <TouchableOpacity
-              style={styles.logoutButton}
-              onPress={handleLogout}
+              style={styles.headerIconButton}
+              onPress={() => router.push("/settings")}
             >
-              <Text style={styles.logoutText}>Đăng xuất</Text>
+              <Ionicons name="grid" size={20} color="#F8FAFC" />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>Trang chủ</Text>
+            <TouchableOpacity
+              style={styles.headerAvatarButton}
+              onPress={() => router.push("/(tabs)/profile")}
+            >
+              {avatarUrl ? (
+                <Image
+                  source={{ uri: avatarUrl }}
+                  style={styles.avatarImage}
+                  contentFit="cover"
+                />
+              ) : (
+                <View style={styles.avatarPlaceholder} />
+              )}
             </TouchableOpacity>
           </View>
 
@@ -236,7 +248,7 @@ export default function HomeScreen() {
             <TextInput
               value={searchQuery}
               onChangeText={setSearchQuery}
-              placeholder="Find Your Coffee..."
+              placeholder="Tìm kiếm cà phê..."
               placeholderTextColor="#6E7379"
               style={styles.searchInput}
               returnKeyType="search"
@@ -387,82 +399,105 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    padding: 24,
+    paddingHorizontal: 18,
+    paddingTop: 12,
+    paddingBottom: 20,
   },
   searchContainer: {
-    marginBottom: 18,
+    marginBottom: 10,
   },
   searchInput: {
-    backgroundColor: "#1A1C20",
-    borderRadius: 18,
-    paddingHorizontal: 18,
+    backgroundColor: "#10131A",
+    borderRadius: 16,
+    paddingHorizontal: 16,
     paddingVertical: 12,
-    fontSize: 14,
+    fontSize: 15,
     color: "#FFFFFF",
     borderWidth: 1,
-    borderColor: "#1F242A",
+    borderColor: "#1B2028",
   },
   categoryScroll: {
-    marginBottom: 26,
+    marginBottom: 14,
   },
   categoryContent: {
     paddingRight: 8,
     gap: 12,
   },
   categoryChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 9,
-    borderRadius: 18,
-    backgroundColor: "#1A1C20",
+    height: 36,
+    paddingHorizontal: 14,
+    borderRadius: 10,
+    minWidth: 68,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#12151C",
     borderWidth: 1,
-    borderColor: "#1F242A",
+    borderColor: "#1B2028",
   },
   categoryChipActive: {
-    backgroundColor: "#1F242A",
-    borderColor: "#F0843C",
+    backgroundColor: "#1A1F28",
+    borderColor: "#FF7F3F",
   },
   categoryText: {
-    fontSize: 14,
+    fontSize: 13,
+    lineHeight: 16,
     color: "#9BA1A6",
     fontWeight: "600",
   },
   categoryTextActive: {
-    color: "#F0843C",
+    color: "#FF7F3F",
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 32,
-    paddingTop: 16,
+    marginBottom: 10,
+    paddingTop: 6,
   },
-  title: {
-    fontSize: 32,
-    fontWeight: "bold",
+  headerIconButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    backgroundColor: "#1B2430",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerTitle: {
+    flex: 1,
+    textAlign: "center",
+    fontSize: 20,
+    fontWeight: "700",
     color: "#FFFFFF",
   },
-  logoutButton: {
-    backgroundColor: "#FF4D4F",
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
+  headerAvatarButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#1B2430",
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
   },
-  logoutText: {
-    color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "600",
+  avatarImage: {
+    width: "100%",
+    height: "100%",
+  },
+  avatarPlaceholder: {
+    width: "100%",
+    height: "100%",
+    backgroundColor: "#2A2A2A",
   },
   welcomeContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingVertical: 40,
+    paddingVertical: 14,
   },
   welcomeText: {
-    fontSize: 20,
+    fontSize: 18,
     color: "#FFFFFF",
     textAlign: "center",
-    marginBottom: 16,
+    marginBottom: 12,
     fontWeight: "600",
   },
   hintText: {
@@ -475,19 +510,19 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginTop: 4,
-    marginBottom: 16,
+    marginTop: 0,
+    marginBottom: 8,
   },
   sectionTitle: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: "700",
     color: "#FFFFFF",
   },
   refreshButton: {
-    backgroundColor: "#1F242A",
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 12,
+    backgroundColor: "#1B2028",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 10,
   },
   refreshButtonText: {
     color: "#FFFFFF",
@@ -525,64 +560,64 @@ const styles = StyleSheet.create({
   },
   productsContainer: {
     flexDirection: "row",
-    gap: 16,
-    paddingBottom: 32,
+    gap: 14,
+    paddingBottom: 28,
     paddingRight: 8,
   },
   productCard: {
-    width: 200,
-    backgroundColor: "#1A1C20",
-    borderRadius: 24,
-    padding: 14,
+    width: 190,
+    backgroundColor: "#12151C",
+    borderRadius: 20,
+    padding: 12,
     borderWidth: 1,
-    borderColor: "#1F242A",
+    borderColor: "#1B2028",
   },
   productImageWrapper: {
     position: "relative",
-    borderRadius: 20,
+    borderRadius: 16,
     overflow: "hidden",
   },
   favoriteButton: {
     position: "absolute",
-    top: 10,
-    left: 10,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: "rgba(13,16,20,0.8)",
+    top: 8,
+    left: 8,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: "rgba(10,12,16,0.8)",
     alignItems: "center",
     justifyContent: "center",
   },
   favoriteText: {
-    color: "#F0843C",
+    color: "#FF7F3F",
     fontSize: 12,
     fontWeight: "700",
   },
   productImage: {
     width: "100%",
-    height: 140,
-    borderRadius: 20,
+    height: 132,
+    borderRadius: 16,
     backgroundColor: "#2A2A2A",
   },
   ratingBadge: {
     position: "absolute",
-    top: 10,
-    right: 10,
-    backgroundColor: "rgba(13,16,20,0.8)",
-    borderRadius: 14,
+    top: 8,
+    right: 8,
+    backgroundColor: "rgba(10,12,16,0.8)",
+    borderRadius: 12,
     paddingHorizontal: 8,
     paddingVertical: 4,
   },
   ratingText: {
-    color: "#F4A261",
+    color: "#F7A04C",
     fontSize: 11,
     fontWeight: "700",
   },
   productBody: {
-    paddingTop: 12,
+    paddingTop: 10,
   },
   productName: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: "700",
     color: "#FFFFFF",
     marginBottom: 4,
@@ -590,7 +625,7 @@ const styles = StyleSheet.create({
   productDescription: {
     fontSize: 11,
     color: "#9BA1A6",
-    marginBottom: 12,
+    marginBottom: 10,
   },
   productFooter: {
     flexDirection: "row",
@@ -604,14 +639,14 @@ const styles = StyleSheet.create({
   },
   priceCurrency: {
     fontSize: 12,
-    color: "#F0843C",
+    color: "#FF7F3F",
     fontWeight: "600",
     marginBottom: 2,
   },
   productPriceValue: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#F0843C",
+    color: "#FF7F3F",
   },
   productPriceHint: {
     fontSize: 12,
@@ -623,10 +658,10 @@ const styles = StyleSheet.create({
     color: "#9BA1A6",
   },
   addButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    backgroundColor: "#F0843C",
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    backgroundColor: "#FF7F3F",
     alignItems: "center",
     justifyContent: "center",
   },

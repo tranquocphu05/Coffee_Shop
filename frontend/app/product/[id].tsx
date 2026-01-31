@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -11,6 +11,8 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Image } from "expo-image";
+import { useFocusEffect } from "@react-navigation/native";
+import * as SecureStore from "expo-secure-store";
 import {
   createCartItem,
   getProductById,
@@ -29,12 +31,27 @@ export default function ProductDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
+  const [isFavorite, setIsFavorite] = useState(false);
 
   useEffect(() => {
     if (id) {
       loadData(id);
     }
   }, [id]);
+
+  useEffect(() => {
+    if (id) {
+      loadFavoriteState(id);
+    }
+  }, [id]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (id) {
+        loadFavoriteState(id);
+      }
+    }, [id])
+  );
 
   useEffect(() => {
     if (!selectedVariantId && variants.length > 0) {
@@ -58,6 +75,39 @@ export default function ProductDetailScreen() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadFavoriteState = async (productId: string) => {
+    const raw = await SecureStore.getItemAsync("favorite_products");
+    if (!raw) {
+      setIsFavorite(false);
+      return;
+    }
+    try {
+      const ids = JSON.parse(raw) as string[];
+      setIsFavorite(Array.isArray(ids) && ids.includes(productId));
+    } catch {
+      setIsFavorite(false);
+    }
+  };
+
+  const handleToggleFavorite = async () => {
+    if (!id) return;
+    const raw = await SecureStore.getItemAsync("favorite_products");
+    let ids: string[] = [];
+    if (raw) {
+      try {
+        const parsed = JSON.parse(raw) as string[];
+        ids = Array.isArray(parsed) ? parsed : [];
+      } catch {
+        ids = [];
+      }
+    }
+    const next = ids.includes(id)
+      ? ids.filter((item) => item !== id)
+      : [...ids, id];
+    setIsFavorite(next.includes(id));
+    await SecureStore.setItemAsync("favorite_products", JSON.stringify(next));
   };
 
   const selectedVariant = useMemo(
@@ -147,8 +197,18 @@ export default function ProductDetailScreen() {
             <TouchableOpacity style={styles.iconButton} onPress={() => router.back()}>
               <Text style={styles.iconButtonText}>‹</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.iconButton}>
-              <Text style={styles.iconButtonText}>♥</Text>
+            <TouchableOpacity
+              style={[styles.iconButton, isFavorite && styles.iconButtonActive]}
+              onPress={handleToggleFavorite}
+            >
+              <Text
+                style={[
+                  styles.iconButtonText,
+                  isFavorite ? styles.iconButtonTextActive : null,
+                ]}
+              >
+                {isFavorite ? "♥" : "♡"}
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -167,19 +227,19 @@ export default function ProductDetailScreen() {
             </View>
             <View style={styles.tags}>
               <View style={styles.tag}>
-                <Text style={styles.tagText}>Coffee</Text>
+                <Text style={styles.tagText}>Cà phê</Text>
               </View>
               <View style={styles.tag}>
-                <Text style={styles.tagText}>Milk</Text>
+                <Text style={styles.tagText}>Sữa</Text>
               </View>
               <View style={styles.tagWide}>
-                <Text style={styles.tagText}>Medium Roasted</Text>
+                <Text style={styles.tagText}>Rang vừa</Text>
               </View>
             </View>
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Description</Text>
+            <Text style={styles.sectionTitle}>Mô tả</Text>
             <Text style={styles.sectionText}>
               {product.description ||
                 "Chưa có mô tả chi tiết cho sản phẩm này."}
@@ -187,7 +247,7 @@ export default function ProductDetailScreen() {
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Size</Text>
+            <Text style={styles.sectionTitle}>Kích cỡ</Text>
             <View style={styles.sizeRow}>
               {sizeOptions.length === 0 ? (
                 <Text style={styles.sectionText}>Chưa có size.</Text>
@@ -218,7 +278,7 @@ export default function ProductDetailScreen() {
 
           <View style={styles.footer}>
             <View>
-              <Text style={styles.priceLabel}>Price</Text>
+              <Text style={styles.priceLabel}>Giá</Text>
               <Text style={styles.priceValue}>
                 ${" "}
                 {selectedVariant?.price !== undefined
@@ -232,7 +292,7 @@ export default function ProductDetailScreen() {
               disabled={adding}
             >
               <Text style={styles.addToCartText}>
-                {adding ? "Đang thêm..." : "Add to Cart"}
+                {adding ? "Đang thêm..." : "Thêm vào giỏ"}
               </Text>
             </TouchableOpacity>
           </View>
@@ -281,10 +341,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  iconButtonActive: {
+    borderWidth: 1,
+    borderColor: "#F0843C",
+  },
   iconButtonText: {
     color: "#FFFFFF",
     fontSize: 18,
     fontWeight: "600",
+  },
+  iconButtonTextActive: {
+    color: "#F0843C",
   },
   content: {
     padding: 24,

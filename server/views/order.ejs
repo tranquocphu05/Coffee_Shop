@@ -224,6 +224,16 @@
             color: var(--text);
         }
 
+        .status-select {
+            min-width: 120px;
+            padding: 6px 10px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: #0c142b;
+            color: var(--text);
+            font-size: 12px;
+        }
+
         .btn-primary {
             padding: 8px 14px;
             background: var(--accent);
@@ -319,6 +329,16 @@
 
         .data-table tr:hover {
             background: rgba(59, 130, 246, 0.08);
+        }
+
+        .cell-customer {
+            cursor: pointer;
+            color: #bfdbfe;
+            font-weight: 600;
+        }
+
+        .cell-customer:hover {
+            color: #60a5fa;
         }
 
         .modal {
@@ -470,7 +490,7 @@
                 <a class="nav-item" href="/product-variant.html">Biến thể</a>
                 <a class="nav-item" href="/category.html">Danh mục</a>
                 <a class="nav-item active" href="/order.html">Đơn hàng</a>
-                <a class="nav-item" href="#">Khách hàng</a>
+                <a class="nav-item" href="/admin/customers">Khách hàng</a>
                 <a class="nav-item" href="#">Thống kê</a>
                 <a class="nav-item" href="#">Banner</a>
             </nav>
@@ -498,8 +518,9 @@
                     <table class="data-table" id="orderTable" style="display: none;">
                         <thead>
                             <tr>
-                                <th>Người dùng</th>
+                                <th>Khách hàng</th>
                                 <th>Địa chỉ</th>
+                                <th>Số điện thoại</th>
                                 <th>Trạng thái</th>
                                 <th>Tổng tiền</th>
                                 <th>Hành động</th>
@@ -515,27 +536,32 @@
     <div class="modal" id="editOrderModal" aria-hidden="true">
         <div class="modal-content">
             <div class="modal-header">
-                <h4>Chỉnh sửa đơn hàng</h4>
+                <h4>Chi tiết đơn hàng</h4>
                 <button type="button" class="modal-close" id="closeEditOrderModal">&times;</button>
             </div>
             <form id="editOrderForm">
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="editOrderUserId">User ID</label>
+                        <label for="editOrderUserId">Khách hàng</label>
                         <input type="text" id="editOrderUserId" name="editOrderUserId" readonly>
                     </div>
                     <div class="form-group">
-                        <label for="editOrderAddressId">Address ID</label>
+                        <label for="editOrderAddressId">Địa chỉ</label>
                         <input type="text" id="editOrderAddressId" name="editOrderAddressId" readonly>
                     </div>
                     <div class="form-group">
                         <label for="editOrderStatus">Trạng thái</label>
-                        <input type="text" id="editOrderStatus" name="editOrderStatus" required>
+                        <select id="editOrderStatus" name="editOrderStatus" required disabled>
+                            <option value="pending">Chờ xử lý</option>
+                            <option value="processing">Đang xử lý</option>
+                            <option value="shipping">Đang giao</option>
+                            <option value="delivered">Đã giao</option>
+                            <option value="cancelled">Đã hủy</option>
+                        </select>
                     </div>
                 </div>
-                <div class="form-row" style="grid-template-columns: auto auto 1fr; align-items: center;">
-                    <button type="submit" class="btn-primary">Lưu thay đổi</button>
-                    <button type="button" class="btn-secondary" id="cancelEditOrder">Hủy</button>
+                <div class="form-row" style="grid-template-columns: auto 1fr; align-items: center;">
+                    <button type="button" class="btn-secondary" id="cancelEditOrder">Đóng</button>
                     <div id="editOrderMessage" class="form-message"></div>
                 </div>
             </form>
@@ -548,6 +574,13 @@
         let currentEditId = null;
         let orderMap = {};
         const editOrderModal = document.getElementById('editOrderModal');
+        const statusOptions = [
+            { value: 'pending', label: 'Chờ xử lý' },
+            { value: 'processing', label: 'Đang xử lý' },
+            { value: 'shipping', label: 'Đang giao' },
+            { value: 'delivered', label: 'Đã giao' },
+            { value: 'cancelled', label: 'Đã hủy' }
+        ];
 
         function openEditOrderModal() {
             if (!editOrderModal) return;
@@ -578,7 +611,7 @@
                 if (token) {
                     headers['Authorization'] = 'Bearer ' + token;
                 }
-                const response = await fetch('/api/order', { headers });
+                const response = await fetch('/api/order?include=detail', { headers });
                 const data = await response.json();
 
                 if (!response.ok) {
@@ -597,15 +630,30 @@
                     .map((order) => {
                         orderMap[String(order._id)] = order;
                         const totalAmount = typeof order.total_amount === 'number' ? order.total_amount : '-';
+                        const userLabel = order.user?.name || order.address?.name || 'Ẩn danh';
+                        const addressLabel = order.address?.address || '';
+                        const phoneLabel = order.address?.phone || '';
+                        const statusSelect = `
+                            <select class="status-select" data-id="${order._id}">
+                                ${statusOptions
+                                    .map((status) => `
+                                        <option value="${status.value}" ${order.status === status.value ? 'selected' : ''}>
+                                            ${status.label}
+                                        </option>
+                                    `)
+                                    .join('')}
+                            </select>
+                        `;
                         return `
                             <tr>
-                                <td>${order.user_id || ''}</td>
-                                <td>${order.address_id || ''}</td>
-                                <td>${order.status || ''}</td>
+                                <td class="cell-customer" data-id="${order._id}">${userLabel}</td>
+                                <td>${addressLabel}</td>
+                                <td>${phoneLabel}</td>
+                                <td>${statusSelect}</td>
                                 <td>${totalAmount}</td>
                                 <td>
                                     <div class="table-actions">
-                                        <button class="btn-action btn-edit" data-id="${order._id}">Sửa</button>
+                                        <button class="btn-action btn-edit btn-update" data-id="${order._id}">Cập nhật</button>
                                         <button class="btn-action btn-danger" data-id="${order._id}">Xóa</button>
                                     </div>
                                 </td>
@@ -686,34 +734,8 @@
 
         const editOrderForm = document.getElementById('editOrderForm');
         if (editOrderForm) {
-            editOrderForm.addEventListener('submit', async (event) => {
+            editOrderForm.addEventListener('submit', (event) => {
                 event.preventDefault();
-                if (!currentEditId) {
-                    return;
-                }
-
-                const editOrderUserId = document.getElementById('editOrderUserId');
-                const editOrderAddressId = document.getElementById('editOrderAddressId');
-                const editOrderStatus = document.getElementById('editOrderStatus');
-                const user_id = editOrderUserId.value.trim();
-                const address_id = editOrderAddressId.value.trim();
-                const status = editOrderStatus.value.trim();
-
-                if (!user_id || !address_id || !status) {
-                    const editOrderMessage = document.getElementById('editOrderMessage');
-                    editOrderMessage.textContent = 'Vui lòng nhập đầy đủ thông tin.';
-                    editOrderMessage.className = 'form-message error';
-                    return;
-                }
-
-                const payload = { status };
-
-                const updated = await updateOrder(currentEditId, payload);
-                if (updated) {
-                    currentEditId = null;
-                    closeEditOrderModal();
-                    fetchOrders();
-                }
             });
         }
 
@@ -756,7 +778,19 @@
                 if (!(target instanceof HTMLElement)) {
                     return;
                 }
-                if (target.classList.contains('btn-edit')) {
+                if (target.classList.contains('btn-update')) {
+                    const id = target.getAttribute('data-id');
+                    if (!id) return;
+                    const select = orderTableBody.querySelector(`.status-select[data-id="${id}"]`);
+                    if (!select) return;
+                    const status = select.value.trim();
+                    if (!status) return;
+                    const updated = await updateOrder(id, { status });
+                    if (updated) {
+                        fetchOrders();
+                    }
+                }
+                if (target.classList.contains('cell-customer')) {
                     const id = target.getAttribute('data-id');
                     if (!id || !orderMap[id]) return;
                     const order = orderMap[id];
@@ -764,8 +798,10 @@
                     const editOrderUserId = document.getElementById('editOrderUserId');
                     const editOrderAddressId = document.getElementById('editOrderAddressId');
                     const editOrderStatus = document.getElementById('editOrderStatus');
-                    editOrderUserId.value = order.user_id || '';
-                    editOrderAddressId.value = order.address_id || '';
+                    editOrderUserId.value = order.user?.name || order.address?.name || 'Ẩn danh';
+                    editOrderAddressId.value = order.address
+                        ? `${order.address.address || ''}${order.address.phone ? ` - ${order.address.phone}` : ''}`
+                        : '';
                     editOrderStatus.value = order.status || '';
                     openEditOrderModal();
                 }
