@@ -64,14 +64,14 @@ export default function LoginScreen() {
           </View>
 
           {/* Welcome Text */}
-          <Text style={styles.welcomeText}>Welcome to Lungo !!</Text>
-          <Text style={styles.subtitleText}>Login to Continue</Text>
+          <Text style={styles.welcomeText}>Chào mừng đến với Lungo!!</Text>
+          <Text style={styles.subtitleText}>Đăng nhập để tiếp tục</Text>
 
           {/* Input Fields */}
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.input}
-              placeholder="Email Address"
+              placeholder="Email"
               placeholderTextColor="#9BA1A6"
               value={email}
               onChangeText={(t) => {
@@ -89,7 +89,7 @@ export default function LoginScreen() {
                   styles.passwordInput,
                   errorMsg ? styles.inputErrorBorder : null,
                 ]}
-                placeholder="Password"
+                placeholder="Mật khẩu"
                 placeholderTextColor="#9BA1A6"
                 value={password}
                 onChangeText={(t) => {
@@ -124,22 +124,22 @@ export default function LoginScreen() {
             disabled={loading}
           >
             <Text style={styles.signInText}>
-              {loading ? "Signing In..." : "Sign In"}
+              {loading ? "Đang đăng nhập..." : "Đăng nhập"}
             </Text>
           </TouchableOpacity>
 
           {/* Links */}
           <View style={styles.linksContainer}>
             <Text style={styles.linkText}>
-              Don't have account? Click{" "}
+              Chưa có tài khoản?{" "}
               <Link href="/register" asChild>
-                <Text style={styles.linkHighlight}>Register</Text>
+                <Text style={styles.linkHighlight}>Đăng ký</Text>
               </Link>
             </Text>
             <Text style={styles.linkText}>
-              Forget Password? Click{" "}
+              Quên mật khẩu?{" "}
               <Link href="/reset" asChild>
-                <Text style={styles.linkHighlight}>Reset</Text>
+                <Text style={styles.linkHighlight}>Đặt lại</Text>
               </Link>
             </Text>
           </View>

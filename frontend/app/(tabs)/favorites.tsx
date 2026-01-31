@@ -108,7 +108,7 @@ export default function FavoritesScreen() {
     <SafeAreaView style={styles.container} edges={["top"]}>
       <StatusBar style="light" />
       <View style={styles.header}>
-        <Text style={styles.title}>Favorites</Text>
+        <Text style={styles.title}>Yêu thích</Text>
         <TouchableOpacity style={styles.refreshButton} onPress={loadData}>
           <Text style={styles.refreshText}>Tải lại</Text>
         </TouchableOpacity>

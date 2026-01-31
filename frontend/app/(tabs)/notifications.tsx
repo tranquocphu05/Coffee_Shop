@@ -1,70 +1,251 @@
-import React from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  ActivityIndicator,
+  Alert,
   StyleSheet,
   View,
   Text,
   ScrollView,
   TouchableOpacity,
-  Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
+import { Image } from "expo-image";
+import { useFocusEffect } from "@react-navigation/native";
+import { API_BASE_URL } from "@/constants/api";
+import {
+  deleteOrder,
+  getOrderDetails,
+  getOrders,
+  getProductVariants,
+  type Order,
+  type OrderDetail,
+  type ProductVariant,
+} from "@/lib/api";
+import { getAuthUser } from "@/lib/auth";
+
+type OrderItem = {
+  id: string;
+  name: string;
+  subtitle: string;
+  total: number;
+  image?: string;
+  variants: Array<{ size: string; price: number; qty: number }>;
+};
+
+type OrderView = {
+  id: string;
+  date: string;
+  totalAmount: number;
+  status: string;
+  items: OrderItem[];
+};
+
+const formatOrderDate = (orderId: string) => {
+  if (!orderId || orderId.length < 8) return "Không có";
+  const timestamp = parseInt(orderId.substring(0, 8), 16) * 1000;
+  const date = new Date(timestamp);
+  const datePart = date.toLocaleDateString("vi-VN");
+  const timePart = date.toLocaleTimeString("vi-VN", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  return `${datePart} ${timePart}`;
+};
+
+const getImageUrl = (imagePath?: string) => {
+  if (!imagePath) {
+    return require("@/assets/images/react-logo.png");
+  }
+  if (imagePath.startsWith("http")) {
+    return { uri: imagePath };
+  }
+  if (imagePath.startsWith("/")) {
+    return { uri: `${API_BASE_URL}${imagePath}` };
+  }
+  return { uri: `${API_BASE_URL}/images/product_variants/${imagePath}` };
+};
+
+const getStatusMeta = (status?: string) => {
+  const normalized = (status || "").toLowerCase();
+  switch (normalized) {
+    case "pending":
+    case "awaiting":
+      return { label: "Chờ xử lý", color: "#F59E0B", bg: "rgba(245, 158, 11, 0.15)" };
+    case "processing":
+    case "in_progress":
+      return { label: "Đang xử lý", color: "#3B82F6", bg: "rgba(59, 130, 246, 0.15)" };
+    case "shipping":
+      return { label: "Đang giao", color: "#0EA5E9", bg: "rgba(14, 165, 233, 0.15)" };
+    case "delivered":
+      return { label: "Đã giao", color: "#10B981", bg: "rgba(16, 185, 129, 0.15)" };
+    case "completed":
+    case "done":
+      return { label: "Đã giao", color: "#10B981", bg: "rgba(16, 185, 129, 0.15)" };
+    case "cancelled":
+    case "canceled":
+      return { label: "Đã hủy", color: "#EF4444", bg: "rgba(239, 68, 68, 0.15)" };
+    default:
+      return { label: status || "Chưa rõ", color: "#9CA3AF", bg: "rgba(156, 163, 175, 0.15)" };
+  }
+};
 
 export default function NotificationsScreen() {
-  const orders = [
-    {
-      date: "20th March 16:23",
-      items: [
-        {
-          id: "1",
-          name: "Cappuccino",
-          subtitle: "With Steamed Milk",
-          total: 37.2,
-          image: require("@/assets/images/react-logo.png"),
-          variants: [
-            { size: "S", price: 4.2, qty: 2 },
-            { size: "M", price: 6.2, qty: 2 },
-            { size: "L", price: 8.2, qty: 2 },
-          ],
+  const [orders, setOrders] = useState<OrderView[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const buildOrderViews = (
+    rawOrders: Order[],
+    detailsByOrder: Record<string, OrderDetail[]>,
+    variantsById: Record<string, ProductVariant>
+  ) => {
+    return rawOrders
+      .slice()
+      .sort((a, b) => (a._id < b._id ? 1 : a._id > b._id ? -1 : 0))
+      .map((order) => {
+      const details = detailsByOrder[order._id] || [];
+      const grouped: Record<string, OrderItem> = {};
+
+      details.forEach((detail) => {
+        const variant = variantsById[detail.variants_id];
+        const product = variant?.product_id as
+          | { _id?: string; product_name?: string; description?: string }
+          | undefined;
+        const productId = product?._id || detail.variants_id;
+        if (!grouped[productId]) {
+          grouped[productId] = {
+            id: productId,
+            name: product?.product_name || "Sản phẩm",
+            subtitle: product?.description || "",
+            total: 0,
+            image: variant?.image,
+            variants: [],
+          };
+        }
+
+        grouped[productId].variants.push({
+          size: variant?.size || variant?.sku || "Mặc định",
+          price: detail.price,
+          qty: detail.quantity,
+        });
+        grouped[productId].total += detail.price * detail.quantity;
+      });
+
+      const items = Object.values(grouped);
+      const totalAmount =
+        typeof order.total_amount === "number"
+          ? order.total_amount
+          : items.reduce((sum, item) => sum + item.total, 0);
+
+      return {
+        id: order._id,
+        date: formatOrderDate(order._id),
+        totalAmount,
+        status: order.status,
+        items,
+      };
+    });
+  };
+
+  const loadOrders = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const authUser = await getAuthUser();
+      const userId = (authUser as { _id?: string })?._id;
+      if (!userId) {
+        setOrders([]);
+        setError("Bạn cần đăng nhập để xem lịch sử đơn hàng.");
+        return;
+      }
+
+      const [rawOrders, variants] = await Promise.all([
+        getOrders(userId),
+        getProductVariants(),
+      ]);
+
+      const variantsById = variants.reduce<Record<string, ProductVariant>>(
+        (acc, variant) => {
+          acc[variant._id] = variant;
+          return acc;
         },
-        {
-          id: "2",
-          name: "Cappuccino",
-          subtitle: "With Steamed Milk",
-          total: 37.2,
-          image: require("@/assets/images/react-logo.png"),
-          variants: [
-            { size: "S", price: 4.2, qty: 2 },
-            { size: "M", price: 6.2, qty: 2 },
-            { size: "L", price: 8.2, qty: 2 },
-          ],
+        {}
+      );
+
+      const detailsList = await Promise.all(
+        rawOrders.map((order) => getOrderDetails(order._id))
+      );
+
+      const detailsByOrder: Record<string, OrderDetail[]> = {};
+      rawOrders.forEach((order, index) => {
+        detailsByOrder[order._id] = detailsList[index] || [];
+      });
+
+      setOrders(buildOrderViews(rawOrders, detailsByOrder, variantsById));
+    } catch (err) {
+      console.error("Error loading orders:", err);
+      setError("Không thể tải lịch sử đơn hàng.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const isDeleteBlocked = (status?: string) => {
+    const normalized = (status || "").toLowerCase().trim();
+    return (
+      normalized === "processing" ||
+      normalized === "shipping" ||
+      normalized === "đang xử lý" ||
+      normalized === "dang xu ly" ||
+      normalized === "đang giao" ||
+      normalized === "dang giao"
+    );
+  };
+
+  const handleDeleteOrder = (orderId: string, status?: string) => {
+    if (isDeleteBlocked(status)) {
+      Alert.alert(
+        "Không thể xóa",
+        "Đơn hàng đang xử lý hoặc đang giao nên không thể xóa."
+      );
+      return;
+    }
+    Alert.alert("Xóa đơn hàng", "Bạn có chắc muốn xóa đơn hàng này?", [
+      { text: "Hủy", style: "cancel" },
+      {
+        text: "Xóa",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await deleteOrder(orderId);
+            await loadOrders();
+          } catch (err) {
+            console.error("Error deleting order:", err);
+            setError("Không thể xóa đơn hàng. Vui lòng thử lại.");
+          }
         },
-      ],
-    },
-    {
-      date: "18th March 2023",
-      items: [
-        {
-          id: "3",
-          name: "Liberica Beans",
-          subtitle: "From Africa",
-          total: 37.2,
-          image: require("@/assets/images/react-logo.png"),
-          variants: [
-            { size: "250gm", price: 4.2, qty: 2 },
-            { size: "500gm", price: 6.2, qty: 2 },
-            { size: "1Kg", price: 8.2, qty: 2 },
-          ],
-        },
-      ],
-    },
-  ];
+      },
+    ]);
+  };
+
+  useEffect(() => {
+    loadOrders();
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadOrders();
+    }, [])
+  );
+
+  const hasOrders = useMemo(() => orders.length > 0, [orders]);
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
       <StatusBar style="light" />
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Order History</Text>
+        <Text style={styles.headerTitle}>Lịch sử đơn hàng</Text>
         <View style={styles.avatar} />
       </View>
       <ScrollView
@@ -72,50 +253,99 @@ export default function NotificationsScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {orders.map((order, index) => (
-          <View key={`${order.date}-${index}`} style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <View>
-                <Text style={styles.sectionLabel}>Order Date</Text>
-                <Text style={styles.sectionValue}>{order.date}</Text>
-              </View>
-              <View style={styles.sectionRight}>
-                <Text style={styles.sectionLabel}>Total Amount</Text>
-                <Text style={styles.sectionTotal}>$ 74.40</Text>
-              </View>
-            </View>
-
-            {order.items.map((item) => (
-              <View key={item.id} style={styles.orderCard}>
-                <View style={styles.orderHeader}>
-                  <Image source={item.image} style={styles.orderImage} />
-                  <View style={styles.orderInfo}>
-                    <Text style={styles.orderName}>{item.name}</Text>
-                    <Text style={styles.orderSubtitle}>{item.subtitle}</Text>
-                  </View>
-                  <Text style={styles.orderTotal}>$ {item.total.toFixed(2)}</Text>
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#F0843C" />
+            <Text style={styles.loadingText}>Đang tải đơn hàng...</Text>
+          </View>
+        ) : error ? (
+          <View style={styles.loadingContainer}>
+            <Text style={styles.errorText}>{error}</Text>
+            <TouchableOpacity style={styles.retryButton} onPress={loadOrders}>
+              <Text style={styles.retryText}>Thử lại</Text>
+            </TouchableOpacity>
+          </View>
+        ) : !hasOrders ? (
+          <View style={styles.loadingContainer}>
+            <Text style={styles.emptyText}>Chưa có đơn hàng nào.</Text>
+          </View>
+        ) : (
+          orders.map((order) => (
+            <View key={order.id} style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <View>
+                  <Text style={styles.sectionLabel}>Ngày đặt</Text>
+                  <Text style={styles.sectionValue}>{order.date}</Text>
                 </View>
+                <View style={styles.sectionRight}>
+                  <Text style={styles.sectionLabel}>Tổng tiền</Text>
+                  <Text style={styles.sectionTotal}>
+                    $ {order.totalAmount.toFixed(2)}
+                  </Text>
+                  <View
+                    style={[
+                      styles.statusBadge,
+                      { backgroundColor: getStatusMeta(order.status).bg, borderColor: getStatusMeta(order.status).color },
+                    ]}
+                  >
+                    <Text style={[styles.statusText, { color: getStatusMeta(order.status).color }]}>
+                      {getStatusMeta(order.status).label}
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    style={[
+                      styles.deleteOrderButton,
+                      isDeleteBlocked(order.status)
+                        ? styles.deleteOrderButtonDisabled
+                        : null,
+                    ]}
+                    onPress={() => handleDeleteOrder(order.id, order.status)}
+                    disabled={isDeleteBlocked(order.status)}
+                  >
+                    <Text style={styles.deleteOrderText}>Xóa</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+              <View style={styles.sectionDivider} />
 
-                <View style={styles.variantRow}>
-                  {item.variants.map((variant) => (
-                    <View key={variant.size} style={styles.variantCard}>
-                      <Text style={styles.variantSize}>{variant.size}</Text>
-                      <Text style={styles.variantPrice}>$ {variant.price.toFixed(2)}</Text>
-                      <Text style={styles.variantQty}>x {variant.qty}</Text>
-                      <Text style={styles.variantSubtotal}>
-                        {((variant.price || 0) * variant.qty).toFixed(2)}
+              {order.items.map((item) => (
+                <View key={item.id} style={styles.orderCard}>
+                  <View style={styles.orderHeader}>
+                    <Image
+                      source={getImageUrl(item.image)}
+                      style={styles.orderImage}
+                      contentFit="cover"
+                    />
+                    <View style={styles.orderInfo}>
+                      <Text style={styles.orderName}>{item.name}</Text>
+                      <Text style={styles.orderSubtitle}>
+                        {item.subtitle || " "}
                       </Text>
                     </View>
-                  ))}
-                </View>
-              </View>
-            ))}
-          </View>
-        ))}
+                    <Text style={styles.orderTotal}>
+                      $ {item.total.toFixed(2)}
+                    </Text>
+                  </View>
 
-        <TouchableOpacity style={styles.downloadButton}>
-          <Text style={styles.downloadText}>Download</Text>
-        </TouchableOpacity>
+                  <View style={styles.variantRow}>
+                    {item.variants.map((variant, index) => (
+                      <View key={`${variant.size}-${index}`} style={styles.variantCard}>
+                        <Text style={styles.variantSize}>{variant.size}</Text>
+                        <Text style={styles.variantPrice}>
+                          $ {variant.price.toFixed(2)}
+                        </Text>
+                        <Text style={styles.variantQty}>x {variant.qty}</Text>
+                        <Text style={styles.variantSubtotal}>
+                          {(variant.price * variant.qty).toFixed(2)}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+              ))}
+            </View>
+          ))
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -124,63 +354,139 @@ export default function NotificationsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#000000",
+    backgroundColor: "#0B0F14",
   },
   header: {
-    paddingHorizontal: 24,
-    paddingTop: 12,
-    paddingBottom: 8,
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 12,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
   headerTitle: {
-    color: "#FFFFFF",
-    fontSize: 20,
+    color: "#F8FAFC",
+    fontSize: 22,
     fontWeight: "700",
   },
   avatar: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: "#1A1C20",
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: "#1B2430",
+    borderWidth: 1,
+    borderColor: "#223041",
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 32,
+    paddingHorizontal: 16,
+    paddingBottom: 28,
+  },
+  loadingContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 32,
+    gap: 12,
+  },
+  loadingText: {
+    color: "#98A2B3",
+    fontSize: 14,
+  },
+  errorText: {
+    color: "#FF4D4F",
+    fontSize: 14,
+  },
+  retryButton: {
+    backgroundColor: "#1B2430",
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#223041",
+  },
+  retryText: {
+    color: "#F8FAFC",
+    fontWeight: "600",
+  },
+  emptyText: {
+    color: "#98A2B3",
+    fontSize: 14,
   },
   section: {
-    marginBottom: 20,
+    marginBottom: 16,
+    backgroundColor: "#121826",
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: "#1F2937",
   },
   sectionHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 12,
+    gap: 12,
   },
   sectionLabel: {
-    color: "#9BA1A6",
-    fontSize: 12,
+    color: "#94A3B8",
+    fontSize: 11,
     marginBottom: 4,
   },
   sectionValue: {
-    color: "#FFFFFF",
-    fontSize: 12,
+    color: "#F8FAFC",
+    fontSize: 13,
+    fontWeight: "600",
   },
   sectionRight: {
     alignItems: "flex-end",
+    gap: 6,
   },
   sectionTotal: {
-    color: "#F0843C",
+    color: "#F59E0B",
     fontWeight: "700",
+    fontSize: 14,
+  },
+  statusBadge: {
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 999,
+  },
+  statusText: {
+    fontSize: 10,
+    fontWeight: "600",
+  },
+  deleteOrderButton: {
+    marginTop: 4,
+    backgroundColor: "#1B2430",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#2B3646",
+  },
+  deleteOrderButtonDisabled: {
+    opacity: 0.5,
+  },
+  deleteOrderText: {
+    color: "#FF4D4F",
+    fontWeight: "600",
+    fontSize: 11,
+  },
+  sectionDivider: {
+    height: 1,
+    backgroundColor: "#1F2937",
+    marginTop: 10,
+    marginBottom: 12,
   },
   orderCard: {
-    backgroundColor: "#13161B",
-    borderRadius: 16,
+    backgroundColor: "#0F172A",
+    borderRadius: 14,
     padding: 12,
-    marginBottom: 12,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: "#1F2937",
   },
   orderHeader: {
     flexDirection: "row",
@@ -188,71 +494,66 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   orderImage: {
-    width: 46,
-    height: 46,
+    width: 48,
+    height: 48,
     borderRadius: 12,
     marginRight: 10,
+    borderWidth: 1,
+    borderColor: "#1F2937",
   },
   orderInfo: {
     flex: 1,
   },
   orderName: {
-    color: "#FFFFFF",
+    color: "#F8FAFC",
     fontWeight: "600",
+    fontSize: 13,
   },
   orderSubtitle: {
-    color: "#9BA1A6",
-    fontSize: 12,
+    color: "#94A3B8",
+    fontSize: 11,
+    marginTop: 2,
   },
   orderTotal: {
-    color: "#F0843C",
+    color: "#F59E0B",
     fontWeight: "700",
+    fontSize: 13,
   },
   variantRow: {
     flexDirection: "row",
-    gap: 10,
+    gap: 8,
     flexWrap: "wrap",
   },
   variantCard: {
-    backgroundColor: "#1A1C20",
-    borderRadius: 12,
-    paddingVertical: 8,
-    paddingHorizontal: 10,
+    backgroundColor: "#111827",
+    borderRadius: 10,
+    paddingVertical: 6,
+    paddingHorizontal: 8,
     minWidth: 72,
     alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#1F2937",
   },
   variantSize: {
-    color: "#FFFFFF",
+    color: "#F8FAFC",
     fontWeight: "600",
-    fontSize: 12,
+    fontSize: 11,
   },
   variantPrice: {
-    color: "#F0843C",
+    color: "#F59E0B",
     fontWeight: "600",
-    fontSize: 12,
-    marginTop: 4,
+    fontSize: 11,
+    marginTop: 3,
   },
   variantQty: {
-    color: "#9BA1A6",
-    fontSize: 11,
-    marginTop: 4,
+    color: "#94A3B8",
+    fontSize: 10,
+    marginTop: 3,
   },
   variantSubtotal: {
-    color: "#F0843C",
+    color: "#F59E0B",
     fontWeight: "600",
-    marginTop: 4,
-    fontSize: 12,
-  },
-  downloadButton: {
-    marginTop: 8,
-    alignSelf: "center",
-    backgroundColor: "#F0843C",
-    paddingHorizontal: 40,
-    paddingVertical: 12,
-    borderRadius: 18,
-  },
-  downloadText: {
-    color: "#FFFFFF",
-    fontWeight: "700",
+    marginTop: 3,
+    fontSize: 11,
   },
 });

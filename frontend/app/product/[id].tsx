@@ -167,19 +167,19 @@ export default function ProductDetailScreen() {
             </View>
             <View style={styles.tags}>
               <View style={styles.tag}>
-                <Text style={styles.tagText}>Coffee</Text>
+                <Text style={styles.tagText}>Cà phê</Text>
               </View>
               <View style={styles.tag}>
-                <Text style={styles.tagText}>Milk</Text>
+                <Text style={styles.tagText}>Sữa</Text>
               </View>
               <View style={styles.tagWide}>
-                <Text style={styles.tagText}>Medium Roasted</Text>
+                <Text style={styles.tagText}>Rang vừa</Text>
               </View>
             </View>
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Description</Text>
+            <Text style={styles.sectionTitle}>Mô tả</Text>
             <Text style={styles.sectionText}>
               {product.description ||
                 "Chưa có mô tả chi tiết cho sản phẩm này."}
@@ -187,7 +187,7 @@ export default function ProductDetailScreen() {
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Size</Text>
+            <Text style={styles.sectionTitle}>Kích cỡ</Text>
             <View style={styles.sizeRow}>
               {sizeOptions.length === 0 ? (
                 <Text style={styles.sectionText}>Chưa có size.</Text>
@@ -218,7 +218,7 @@ export default function ProductDetailScreen() {
 
           <View style={styles.footer}>
             <View>
-              <Text style={styles.priceLabel}>Price</Text>
+              <Text style={styles.priceLabel}>Giá</Text>
               <Text style={styles.priceValue}>
                 ${" "}
                 {selectedVariant?.price !== undefined
@@ -232,7 +232,7 @@ export default function ProductDetailScreen() {
               disabled={adding}
             >
               <Text style={styles.addToCartText}>
-                {adding ? "Đang thêm..." : "Add to Cart"}
+                {adding ? "Đang thêm..." : "Thêm vào giỏ"}
               </Text>
             </TouchableOpacity>
           </View>

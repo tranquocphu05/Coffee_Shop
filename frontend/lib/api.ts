@@ -302,34 +302,40 @@ export async function getCategories(): Promise<Category[]> {
 
 export async function getProductsWithVariants(): Promise<ProductWithVariants[]> {
   try {
-    const [products, variants] = await Promise.all([
-      getProducts(),
-      getProductVariants(),
-    ]);
+    const variants = await getProductVariants();
 
-    const variantsByProductId = variants.reduce<Record<string, ProductVariant[]>>(
+    const productsById = variants.reduce<Record<string, ProductWithVariants>>(
       (acc, variant) => {
         const productId =
-          typeof variant.product_id === 'string'
+          typeof variant.product_id === "string"
             ? variant.product_id
             : variant.product_id?._id;
         if (!productId) return acc;
-        if (!acc[productId]) acc[productId] = [];
-        acc[productId].push(variant);
+
+        if (!acc[productId]) {
+          const productInfo =
+            typeof variant.product_id === "string" ? null : variant.product_id;
+          acc[productId] = {
+            _id: productId,
+            product_code: productInfo?.product_code || "",
+            product_name: productInfo?.product_name || variant.sku || "Sản phẩm",
+            description: productInfo?.description,
+            category_id: productInfo?.category_id,
+            variants: [],
+            image: undefined,
+          };
+        }
+
+        acc[productId].variants.push(variant);
+        if (!acc[productId].image && variant.image) {
+          acc[productId].image = variant.image;
+        }
         return acc;
       },
       {}
     );
 
-    return products.map((product) => {
-      const productVariants = variantsByProductId[product._id] || [];
-      const image = productVariants.find((variant) => variant.image)?.image;
-      return {
-        ...product,
-        variants: productVariants,
-        image,
-      };
-    });
+    return Object.values(productsById);
   } catch (error) {
     console.error('[API] Get products with variants error:', error);
     throw error;
@@ -365,6 +371,15 @@ export type Address = {
   address: string;
 };
 
+export type AddressItem = {
+  _id: string;
+  user_id: string;
+  fullName: string;
+  phone: string;
+  address: string;
+  is_delete?: boolean;
+};
+
 export type Account = {
   _id: string;
   name?: string;
@@ -372,6 +387,7 @@ export type Account = {
   phone?: string | null;
   address?: string | null;
   addresses?: Address[];
+  image?: string;
 };
 
 type CartResponse = {
@@ -386,6 +402,11 @@ type AccountResponse = {
   error?: string;
 };
 
+type AvatarResponse = {
+  msg?: string;
+  data?: Account;
+};
+
 type OrderResponse = {
   message?: string;
   data?: { order?: { _id: string } };
@@ -395,6 +416,46 @@ type OrderResponse = {
 type OrderDetailResponse = {
   message?: string;
   data?: { order_detail?: { _id: string } };
+  error?: string;
+};
+
+export type Order = {
+  _id: string;
+  user_id: string;
+  address_id: string;
+  status: string;
+  total_amount?: number;
+};
+
+export type OrderDetail = {
+  _id: string;
+  order_id: string;
+  variants_id: string;
+  quantity: number;
+  price: number;
+};
+
+type OrdersResponse = {
+  message?: string;
+  data?: { orders?: Order[] };
+  error?: string;
+};
+
+type OrderDetailsResponse = {
+  message?: string;
+  data?: { order_details?: OrderDetail[] };
+  error?: string;
+};
+
+type AddressesResponse = {
+  message?: string;
+  data?: { addresses?: AddressItem[] };
+  error?: string;
+};
+
+type AddressResponse = {
+  message?: string;
+  data?: { address?: AddressItem };
   error?: string;
 };
 
@@ -431,6 +492,73 @@ export async function getAccountById(accountId: string): Promise<Account> {
     return json.data.customer;
   } catch (error) {
     console.error('[API] Get account by id error:', error);
+    throw error;
+  }
+}
+
+export async function updateAccountWithAddress(
+  accountId: string,
+  payload: {
+    name?: string;
+    email?: string;
+    phone?: string;
+    address?: string;
+    pass?: string;
+  }
+): Promise<Account> {
+  const url = `/api/account/${accountId}/with-address`;
+
+  try {
+    const formData = new FormData();
+    if (typeof payload.name !== "undefined") formData.append("name", payload.name);
+    if (typeof payload.email !== "undefined") formData.append("email", payload.email);
+    if (typeof payload.phone !== "undefined") formData.append("phone", payload.phone);
+    if (typeof payload.address !== "undefined") formData.append("address", payload.address);
+    if (typeof payload.pass !== "undefined") formData.append("pass", payload.pass);
+
+    const response = await apiClient.put<AccountResponse>(url, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    const json = response.data;
+
+    if (!json.data?.customer && !(json.data as { account?: Account })?.account) {
+      throw new Error("Phản hồi từ server không hợp lệ");
+    }
+
+    return (json.data.customer ||
+      (json.data as { account?: Account }).account) as Account;
+  } catch (error) {
+    console.error("[API] Update account error:", error);
+    throw error;
+  }
+}
+
+export async function uploadAvatar(
+  accountId: string,
+  file: { uri: string; name: string; type: string }
+): Promise<Account> {
+  const url = `/api/account/${accountId}/avatar`;
+
+  try {
+    const formData = new FormData();
+    formData.append("image", {
+      uri: file.uri,
+      name: file.name,
+      type: file.type,
+    } as unknown as Blob);
+
+    const response = await apiClient.post<AvatarResponse>(url, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    const json = response.data;
+
+    if (!json.data) {
+      throw new Error("Phản hồi từ server không hợp lệ");
+    }
+
+    return json.data;
+  } catch (error) {
+    console.error("[API] Upload avatar error:", error);
     throw error;
   }
 }
@@ -487,6 +615,57 @@ export async function createOrderDetail(
     return json.data.order_detail;
   } catch (error) {
     console.error('[API] Create order detail error:', error);
+    throw error;
+  }
+}
+
+export async function getOrders(userId?: string): Promise<Order[]> {
+  const url = "/api/order";
+
+  try {
+    const response = await apiClient.get<OrdersResponse>(url, {
+      params: userId ? { user_id: userId } : undefined,
+    });
+    const json = response.data;
+
+    if (!json.data?.orders) {
+      throw new Error("Phản hồi từ server không hợp lệ");
+    }
+
+    return json.data.orders;
+  } catch (error) {
+    console.error("[API] Get orders error:", error);
+    throw error;
+  }
+}
+
+export async function getOrderDetails(orderId: string): Promise<OrderDetail[]> {
+  const url = "/api/order-detail";
+
+  try {
+    const response = await apiClient.get<OrderDetailsResponse>(url, {
+      params: { order_id: orderId },
+    });
+    const json = response.data;
+
+    if (!json.data?.order_details) {
+      throw new Error("Phản hồi từ server không hợp lệ");
+    }
+
+    return json.data.order_details;
+  } catch (error) {
+    console.error("[API] Get order details error:", error);
+    throw error;
+  }
+}
+
+export async function deleteOrder(orderId: string): Promise<void> {
+  const url = `/api/order/${orderId}`;
+
+  try {
+    await apiClient.delete(url);
+  } catch (error) {
+    console.error("[API] Delete order error:", error);
     throw error;
   }
 }
@@ -573,6 +752,89 @@ export async function deleteCartItem(cartId: string): Promise<void> {
     await apiClient.delete<CartResponse>(url);
   } catch (error) {
     console.error('[API] Delete cart item error:', error);
+    throw error;
+  }
+}
+
+export async function getAddresses(userId?: string): Promise<AddressItem[]> {
+  const url = "/api/address";
+
+  try {
+    const response = await apiClient.get<AddressesResponse>(url, {
+      params: userId ? { user_id: userId } : undefined,
+    });
+    const json = response.data;
+
+    if (!json.data?.addresses) {
+      throw new Error("Phản hồi từ server không hợp lệ");
+    }
+
+    return json.data.addresses;
+  } catch (error) {
+    console.error("[API] Get addresses error:", error);
+    throw error;
+  }
+}
+
+export async function createAddress(
+  userId: string,
+  fullName: string,
+  phone: string,
+  address: string
+): Promise<AddressItem> {
+  const url = "/api/address";
+
+  try {
+    const response = await apiClient.post<AddressResponse>(url, {
+      user_id: userId,
+      fullName,
+      phone,
+      address,
+    });
+    const json = response.data;
+
+    if (!json.data?.address) {
+      throw new Error("Phản hồi từ server không hợp lệ");
+    }
+
+    return json.data.address;
+  } catch (error) {
+    console.error("[API] Create address error:", error);
+    throw error;
+  }
+}
+
+export async function updateAddress(
+  addressId: string,
+  payload: Partial<Pick<AddressItem, "fullName" | "phone" | "address">> & {
+    user_id?: string;
+    is_delete?: boolean;
+  }
+): Promise<AddressItem> {
+  const url = `/api/address/${addressId}`;
+
+  try {
+    const response = await apiClient.put<AddressResponse>(url, payload);
+    const json = response.data;
+
+    if (!json.data?.address) {
+      throw new Error("Phản hồi từ server không hợp lệ");
+    }
+
+    return json.data.address;
+  } catch (error) {
+    console.error("[API] Update address error:", error);
+    throw error;
+  }
+}
+
+export async function deleteAddress(addressId: string): Promise<void> {
+  const url = `/api/address/${addressId}`;
+
+  try {
+    await apiClient.delete<AddressResponse>(url);
+  } catch (error) {
+    console.error("[API] Delete address error:", error);
     throw error;
   }
 }

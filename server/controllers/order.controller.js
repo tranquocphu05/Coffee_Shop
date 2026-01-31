@@ -59,7 +59,59 @@ exports.createOrder = async (req, res) => {
 
 exports.getOrders = async (req, res) => {
   try {
-    const orders = await orderModel.find({});
+    const { user_id } = req.query;
+    const filter = {};
+
+    if (typeof user_id !== "undefined" && user_id !== "") {
+      if (!mongoose.Types.ObjectId.isValid(user_id)) {
+        return res.status(400).json({ error: "Invalid user id" });
+      }
+      filter.user_id = user_id;
+    }
+
+    const includeDetail = req.query.include === "detail";
+
+    if (includeDetail) {
+      const orders = await orderModel.aggregate([
+        { $match: filter },
+        { $sort: { _id: -1 } },
+        {
+          $lookup: {
+            from: "account",
+            localField: "user_id",
+            foreignField: "_id",
+            as: "user",
+          },
+        },
+        {
+          $lookup: {
+            from: "Address",
+            localField: "address_id",
+            foreignField: "_id",
+            as: "address",
+          },
+        },
+        {
+          $addFields: {
+            user: { $arrayElemAt: ["$user", 0] },
+            address: { $arrayElemAt: ["$address", 0] },
+          },
+        },
+        {
+          $project: {
+            user_id: 1,
+            address_id: 1,
+            status: 1,
+            total_amount: 1,
+            user: { name: 1 },
+            address: { name: 1, phone: 1, address: 1 },
+          },
+        },
+      ]);
+      return res.status(200).json({ data: { orders } });
+    }
+
+    const orders = await orderModel.find(filter).sort({ _id: -1 });
     return res.status(200).json({ data: { orders } });
   } catch (error) {
     console.log(error.message);
@@ -164,6 +216,13 @@ exports.deleteOrder = async (req, res) => {
 
     if (!order) {
       return res.status(404).json({ error: "Order not found" });
+    }
+
+    const status = String(order.status || "").toLowerCase();
+    if (status === "processing" || status === "shipping") {
+      return res.status(403).json({
+        error: "Cannot delete order while processing or shipping",
+      });
     }
 
     await orderModel.deleteOne({ _id: id });

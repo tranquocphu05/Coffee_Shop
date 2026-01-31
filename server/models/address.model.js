@@ -10,6 +10,7 @@ const addressSchema = new db.mongoose.Schema(
     name: { type: String, required: true },
     phone: { type: String, required: true },
     address: { type: String, required: true },
+    is_delete: { type: Boolean, default: false },
   },
   { collection: "Address" },
 );

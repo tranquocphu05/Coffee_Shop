@@ -10,6 +10,7 @@ var categoryCtrl = require("../controllers/category.controller");
 var orderCtrl = require("../controllers/order.controller");
 var cartCtrl = require("../controllers/cart.controller");
 var orderDetailCtrl = require("../controllers/order_detail.controller");
+var addressCtrl = require("../controllers/address.controller");
 var jwt = require("jsonwebtoken");
 var mdw = require("../middleware/api.auth");
 
@@ -58,6 +59,7 @@ router.get("/account/list", mdw.api_auth, accCtrl.GetAllAccount);
 router.get("/account/:id", mdw.api_auth, accCtrl.getAccountById);
 router.put("/account/:id/without-address", mdw.api_auth, upload.single("image"), accCtrl.updateAccountWithoutAddress);
 router.put("/account/:id/with-address", mdw.api_auth, upload.single("image"), accCtrl.updateAccountWithAddress);
+router.post("/account/:id/avatar", mdw.api_auth, upload.single("image"), accCtrl.UploadAvatar);
 router.delete("/account/:id", mdw.api_auth, accCtrl.deleteAccount);
 
 // Category
@@ -111,6 +113,13 @@ router.get("/cart/:id", mdw.api_auth, cartCtrl.getCartItemById);
 router.post("/cart", mdw.api_auth, cartCtrl.createCartItem);
 router.put("/cart/:id", mdw.api_auth, cartCtrl.updateCartItem);
 router.delete("/cart/:id", mdw.api_auth, cartCtrl.deleteCartItem);
+
+// Address - Tất cả routes đều cần xác thực token
+router.get("/address", mdw.api_auth, addressCtrl.getAddresses);
+router.get("/address/:id", mdw.api_auth, addressCtrl.getAddressById);
+router.post("/address", mdw.api_auth, addressCtrl.createAddress);
+router.put("/address/:id", mdw.api_auth, addressCtrl.updateAddress);
+router.delete("/address/:id", mdw.api_auth, addressCtrl.deleteAddress);
 
 // Order Detail
 router.get("/order-detail", orderDetailCtrl.getOrderDetails);
