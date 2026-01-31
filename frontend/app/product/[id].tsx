@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -11,6 +11,8 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Image } from "expo-image";
+import { useFocusEffect } from "@react-navigation/native";
+import * as SecureStore from "expo-secure-store";
 import {
   createCartItem,
   getProductById,
@@ -29,12 +31,27 @@ export default function ProductDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
+  const [isFavorite, setIsFavorite] = useState(false);
 
   useEffect(() => {
     if (id) {
       loadData(id);
     }
   }, [id]);
+
+  useEffect(() => {
+    if (id) {
+      loadFavoriteState(id);
+    }
+  }, [id]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (id) {
+        loadFavoriteState(id);
+      }
+    }, [id])
+  );
 
   useEffect(() => {
     if (!selectedVariantId && variants.length > 0) {
@@ -58,6 +75,39 @@ export default function ProductDetailScreen() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadFavoriteState = async (productId: string) => {
+    const raw = await SecureStore.getItemAsync("favorite_products");
+    if (!raw) {
+      setIsFavorite(false);
+      return;
+    }
+    try {
+      const ids = JSON.parse(raw) as string[];
+      setIsFavorite(Array.isArray(ids) && ids.includes(productId));
+    } catch {
+      setIsFavorite(false);
+    }
+  };
+
+  const handleToggleFavorite = async () => {
+    if (!id) return;
+    const raw = await SecureStore.getItemAsync("favorite_products");
+    let ids: string[] = [];
+    if (raw) {
+      try {
+        const parsed = JSON.parse(raw) as string[];
+        ids = Array.isArray(parsed) ? parsed : [];
+      } catch {
+        ids = [];
+      }
+    }
+    const next = ids.includes(id)
+      ? ids.filter((item) => item !== id)
+      : [...ids, id];
+    setIsFavorite(next.includes(id));
+    await SecureStore.setItemAsync("favorite_products", JSON.stringify(next));
   };
 
   const selectedVariant = useMemo(
@@ -147,8 +197,18 @@ export default function ProductDetailScreen() {
             <TouchableOpacity style={styles.iconButton} onPress={() => router.back()}>
               <Text style={styles.iconButtonText}>‹</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.iconButton}>
-              <Text style={styles.iconButtonText}>♥</Text>
+            <TouchableOpacity
+              style={[styles.iconButton, isFavorite && styles.iconButtonActive]}
+              onPress={handleToggleFavorite}
+            >
+              <Text
+                style={[
+                  styles.iconButtonText,
+                  isFavorite ? styles.iconButtonTextActive : null,
+                ]}
+              >
+                {isFavorite ? "♥" : "♡"}
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -281,10 +341,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  iconButtonActive: {
+    borderWidth: 1,
+    borderColor: "#F0843C",
+  },
   iconButtonText: {
     color: "#FFFFFF",
     fontSize: 18,
     fontWeight: "600",
+  },
+  iconButtonTextActive: {
+    color: "#F0843C",
   },
   content: {
     padding: 24,

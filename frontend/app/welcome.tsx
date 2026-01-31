@@ -3,7 +3,7 @@ import { StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { useRouter } from "expo-router";
-import Logo from "@/assets/svg/logo.svg";
+import { Image } from "expo-image";
 
 export default function WelcomeScreen() {
   const router = useRouter();
@@ -22,7 +22,11 @@ export default function WelcomeScreen() {
     <SafeAreaView style={styles.container}>
       <StatusBar style="light" />
       <View style={styles.logoContainer}>
-        <Logo width={200} height={200} />
+        <Image
+          source={require("@/assets/images/react-logo.png")}
+          style={styles.logoImage}
+          contentFit="contain"
+        />
       </View>
     </SafeAreaView>
   );
@@ -38,5 +42,9 @@ const styles = StyleSheet.create({
   logoContainer: {
     justifyContent: "center",
     alignItems: "center",
+  },
+  logoImage: {
+    width: 200,
+    height: 200,
   },
 });

@@ -14,6 +14,7 @@ import { StatusBar } from "expo-status-bar";
 import { useRouter } from "expo-router";
 import { getAuthUser } from "@/lib/auth";
 import { Image } from "expo-image";
+import { Ionicons } from "@expo/vector-icons";
 import {
   createCartItem,
   getCategories,
@@ -214,9 +215,15 @@ export default function HomeScreen() {
       >
         <View style={styles.content}>
           <View style={styles.header}>
-            <Text style={styles.title}>Trang chủ</Text>
             <TouchableOpacity
-              style={styles.avatarButton}
+              style={styles.headerIconButton}
+              onPress={() => router.push("/settings")}
+            >
+              <Ionicons name="grid" size={20} color="#F8FAFC" />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>Trang chủ</Text>
+            <TouchableOpacity
+              style={styles.headerAvatarButton}
               onPress={() => router.push("/(tabs)/profile")}
             >
               {avatarUrl ? (
@@ -444,19 +451,29 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 14,
+    marginBottom: 10,
     paddingTop: 6,
   },
-  title: {
-    fontSize: 28,
-    fontWeight: "bold",
+  headerIconButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    backgroundColor: "#1B2430",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerTitle: {
+    flex: 1,
+    textAlign: "center",
+    fontSize: 20,
+    fontWeight: "700",
     color: "#FFFFFF",
   },
-  avatarButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#1B2028",
+  headerAvatarButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#1B2430",
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",

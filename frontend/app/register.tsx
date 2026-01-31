@@ -15,7 +15,7 @@ import { StatusBar } from "expo-status-bar";
 import { Link, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { registerApp } from "@/lib/api";
-import Logo from "@/assets/svg/logo.svg";
+import { Image } from "expo-image";
 
 export default function RegisterScreen() {
   const [fullName, setFullName] = useState("");
@@ -105,7 +105,11 @@ export default function RegisterScreen() {
         >
           {/* Logo Section */}
           <View style={styles.logoContainer}>
-            <Logo width={120} height={120} />
+            <Image
+              source={require("@/assets/images/react-logo.png")}
+              style={styles.logoImage}
+              contentFit="contain"
+            />
           </View>
 
           {/* Welcome Text */}
@@ -249,6 +253,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 40,
+    height: 120,
+  },
+  logoImage: {
+    width: 120,
     height: 120,
   },
   welcomeText: {

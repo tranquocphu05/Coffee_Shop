@@ -12,7 +12,9 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { Image } from "expo-image";
 import { useFocusEffect } from "@react-navigation/native";
+import { useRouter } from "expo-router";
 import { API_BASE_URL } from "@/constants/api";
+import { Ionicons } from "@expo/vector-icons";
 import {
   deleteOrder,
   getOrderDetails,
@@ -91,9 +93,11 @@ const getStatusMeta = (status?: string) => {
 };
 
 export default function NotificationsScreen() {
+  const router = useRouter();
   const [orders, setOrders] = useState<OrderView[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showHistory, setShowHistory] = useState(false);
 
   const buildOrderViews = (
     rawOrders: Order[],
@@ -239,14 +243,45 @@ export default function NotificationsScreen() {
     }, [])
   );
 
-  const hasOrders = useMemo(() => orders.length > 0, [orders]);
+  const filteredOrders = useMemo(() => {
+    return orders.filter((order) => {
+      const normalized = (order.status || "").toLowerCase().trim();
+      const isDelivered =
+        normalized === "delivered" ||
+        normalized === "completed" ||
+        normalized === "done" ||
+        normalized === "đã giao" ||
+        normalized === "da giao";
+      return showHistory ? isDelivered : !isDelivered;
+    });
+  }, [orders, showHistory]);
+
+  const hasOrders = useMemo(() => filteredOrders.length > 0, [filteredOrders]);
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
       <StatusBar style="light" />
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Lịch sử đơn hàng</Text>
-        <View style={styles.avatar} />
+        <TouchableOpacity
+          style={styles.headerIconButton}
+          onPress={() => router.push("/settings")}
+        >
+          <Ionicons name="grid" size={20} color="#F8FAFC" />
+        </TouchableOpacity>
+        <View style={styles.headerCenter}>
+          <Text style={styles.headerTitle}>Đơn hàng</Text>
+          <TouchableOpacity
+            style={styles.historyButton}
+            onPress={() => setShowHistory((prev) => !prev)}
+          >
+            <Text style={styles.historyButtonText}>
+              {showHistory ? "Tất cả đơn hàng" : "Lịch sử đơn hàng"}
+            </Text>
+          </TouchableOpacity>
+        </View>
+        <View style={styles.headerAvatarButton}>
+          <Ionicons name="person" size={18} color="#F8FAFC" />
+        </View>
       </View>
       <ScrollView
         style={styles.scrollView}
@@ -267,10 +302,14 @@ export default function NotificationsScreen() {
           </View>
         ) : !hasOrders ? (
           <View style={styles.loadingContainer}>
-            <Text style={styles.emptyText}>Chưa có đơn hàng nào.</Text>
+            <Text style={styles.emptyText}>
+              {showHistory
+                ? "Chưa có đơn hàng đã giao."
+                : "Chưa có đơn hàng nào."}
+            </Text>
           </View>
         ) : (
-          orders.map((order) => (
+          filteredOrders.map((order) => (
             <View key={order.id} style={styles.section}>
               <View style={styles.sectionHeader}>
                 <View>
@@ -364,18 +403,45 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
   },
+  headerIconButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    backgroundColor: "#1B2430",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: "center",
+  },
   headerTitle: {
     color: "#F8FAFC",
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: "700",
   },
-  avatar: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
+  historyButton: {
+    marginTop: 8,
+    alignSelf: "center",
     backgroundColor: "#1B2430",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
     borderWidth: 1,
-    borderColor: "#223041",
+    borderColor: "#2B3646",
+  },
+  historyButtonText: {
+    color: "#E2E8F0",
+    fontSize: 11,
+    fontWeight: "600",
+  },
+  headerAvatarButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#1B2430",
+    alignItems: "center",
+    justifyContent: "center",
   },
   scrollView: {
     flex: 1,
