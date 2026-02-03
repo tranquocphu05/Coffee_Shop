@@ -16,6 +16,7 @@ import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { API_BASE_URL } from "@/constants/api";
 import { getProductsWithVariants, type ProductWithVariants } from "@/lib/api";
+import { formatVnd } from "@/lib/format";
 import { useFocusEffect } from "@react-navigation/native";
 
 export default function FavoritesScreen() {
@@ -182,7 +183,7 @@ export default function FavoritesScreen() {
                     {product.description || " "}
                   </Text>
                   <Text style={styles.cardPrice}>
-                    {priceValue !== null ? `$ ${priceValue.toFixed(2)}` : "Chưa có giá"}
+                    {priceValue !== null ? formatVnd(priceValue) : "Chưa có giá"}
                   </Text>
                 </View>
               </TouchableOpacity>

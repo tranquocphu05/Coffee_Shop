@@ -5,7 +5,12 @@ const mongoose = require("mongoose");
 
 exports.createOrder = async (req, res) => {
   try {
-    const { user_id, address_id, status, total_amount } = req.body;
+    const { user_id, address_id, status, total_amount, payment_method } =
+      req.body;
+    const paymentMethod =
+      typeof payment_method === "string" && payment_method.trim()
+        ? payment_method.trim()
+        : undefined;
 
     if (!user_id || !address_id || !status) {
       return res
@@ -43,6 +48,7 @@ exports.createOrder = async (req, res) => {
       address_id,
       status,
       total_amount,
+      paymentMethod,
     });
 
     const newOrder = await order.save();
@@ -103,6 +109,8 @@ exports.getOrders = async (req, res) => {
             address_id: 1,
             status: 1,
             total_amount: 1,
+            paymentMethod: 1,
+            paymentStatus: 1,
             user: { name: 1 },
             address: { name: 1, phone: 1, address: 1 },
           },

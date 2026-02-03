@@ -14,6 +14,10 @@ const orderSchema = new db.mongoose.Schema(
     },
     status: { type: String, required: true },
     total_amount: { type: Number, default: 0 },
+    paymentMethod: { type: String, default: "cash" },
+    paymentStatus: { type: String, default: "PENDING" },
+    vnpTransactionNo: { type: String, default: null },
+    paidAt: { type: Date, default: null },
   },
   { collection: "order" }
 );

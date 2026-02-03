@@ -21,6 +21,7 @@ import {
   type ProductVariant,
 } from "@/lib/api";
 import { API_BASE_URL } from "@/constants/api";
+import { formatVnd } from "@/lib/format";
 
 export default function ProductDetailScreen() {
   const router = useRouter();
@@ -280,10 +281,7 @@ export default function ProductDetailScreen() {
             <View>
               <Text style={styles.priceLabel}>Giá</Text>
               <Text style={styles.priceValue}>
-                ${" "}
-                {selectedVariant?.price !== undefined
-                  ? selectedVariant.price.toFixed(2)
-                  : "0.00"}
+                {formatVnd(selectedVariant?.price ?? 0)}
               </Text>
             </View>
             <TouchableOpacity

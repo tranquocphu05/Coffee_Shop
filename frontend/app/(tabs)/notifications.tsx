@@ -25,6 +25,7 @@ import {
   type ProductVariant,
 } from "@/lib/api";
 import { getAuthUser } from "@/lib/auth";
+import { formatVnd } from "@/lib/format";
 
 type OrderItem = {
   id: string;
@@ -168,6 +169,14 @@ export default function NotificationsScreen() {
         getOrders(userId),
         getProductVariants(),
       ]);
+      const visibleOrders = rawOrders.filter((order) => {
+        const method = (order.paymentMethod || "").toLowerCase();
+        const paymentStatus = (order.paymentStatus || "").toUpperCase();
+        if (method === "vnpay" && paymentStatus !== "PAID") {
+          return false;
+        }
+        return true;
+      });
 
       const variantsById = variants.reduce<Record<string, ProductVariant>>(
         (acc, variant) => {
@@ -178,15 +187,15 @@ export default function NotificationsScreen() {
       );
 
       const detailsList = await Promise.all(
-        rawOrders.map((order) => getOrderDetails(order._id))
+        visibleOrders.map((order) => getOrderDetails(order._id))
       );
 
       const detailsByOrder: Record<string, OrderDetail[]> = {};
-      rawOrders.forEach((order, index) => {
+      visibleOrders.forEach((order, index) => {
         detailsByOrder[order._id] = detailsList[index] || [];
       });
 
-      setOrders(buildOrderViews(rawOrders, detailsByOrder, variantsById));
+      setOrders(buildOrderViews(visibleOrders, detailsByOrder, variantsById));
     } catch (err) {
       console.error("Error loading orders:", err);
       setError("Không thể tải lịch sử đơn hàng.");
@@ -319,7 +328,7 @@ export default function NotificationsScreen() {
                 <View style={styles.sectionRight}>
                   <Text style={styles.sectionLabel}>Tổng tiền</Text>
                   <Text style={styles.sectionTotal}>
-                    $ {order.totalAmount.toFixed(2)}
+                    {formatVnd(order.totalAmount)}
                   </Text>
                   <View
                     style={[
@@ -362,7 +371,7 @@ export default function NotificationsScreen() {
                       </Text>
                     </View>
                     <Text style={styles.orderTotal}>
-                      $ {item.total.toFixed(2)}
+                      {formatVnd(item.total)}
                     </Text>
                   </View>
 
@@ -371,11 +380,11 @@ export default function NotificationsScreen() {
                       <View key={`${variant.size}-${index}`} style={styles.variantCard}>
                         <Text style={styles.variantSize}>{variant.size}</Text>
                         <Text style={styles.variantPrice}>
-                          $ {variant.price.toFixed(2)}
+                          {formatVnd(variant.price)}
                         </Text>
                         <Text style={styles.variantQty}>x {variant.qty}</Text>
                         <Text style={styles.variantSubtotal}>
-                          {(variant.price * variant.qty).toFixed(2)}
+                          {formatVnd(variant.price * variant.qty)}
                         </Text>
                       </View>
                     ))}

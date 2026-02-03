@@ -735,6 +735,11 @@
                     acc[String(product._id)] = product.product_name;
                     return acc;
                 }, {});
+                const vndFormatter = new Intl.NumberFormat('vi-VN');
+                const formatCurrency = (value) => {
+                    if (typeof value !== 'number' || !Number.isFinite(value)) return '-';
+                    return `${vndFormatter.format(Math.round(value))} đ`;
+                };
 
                 variantMap = {};
                 variantTableBody.innerHTML = variants
@@ -751,7 +756,7 @@
                                 <td>${productName}</td>
                                 <td>${variant.size || '-'}</td>
                                 <td>${typeof variant.quantity === 'number' ? variant.quantity : '-'}</td>
-                                <td>${typeof variant.price === 'number' ? variant.price : '-'}</td>
+                                <td>${formatCurrency(variant.price)}</td>
                                 <td>${imageCell}</td>
                                 <td>
                                     <div class="table-actions">

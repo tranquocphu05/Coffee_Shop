@@ -16,6 +16,7 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import {
   createOrder,
   createOrderDetail,
+  createVnpayPaymentUrlForCart,
   deleteCartItem,
   getAccountById,
   getCartItems,
@@ -24,7 +25,9 @@ import {
 } from "@/lib/api";
 import { API_BASE_URL } from "@/constants/api";
 import { clearAuth, getAuthUser } from "@/lib/auth";
+import { formatVnd } from "@/lib/format";
 import { useFocusEffect } from "@react-navigation/native";
+import { Linking } from "react-native";
 
 interface GroupedCartItem {
   product_id: string;
@@ -249,50 +252,141 @@ export default function CartScreen() {
     );
   };
 
-  const handlePay = async () => {
+  const resolveCheckoutContext = async () => {
+    const authUser = await getAuthUser();
+    const userId = (authUser as { _id?: string })?._id;
+    if (!userId) {
+      Alert.alert("Lỗi", "Không tìm thấy thông tin người dùng.");
+      return null;
+    }
+
+    const account = await getAccountById(userId);
+    const addressId = account.addresses?.[0]?._id;
+    if (!addressId) {
+      Alert.alert("Thiếu địa chỉ", "Vui lòng cập nhật địa chỉ giao hàng.");
+      return null;
+    }
+
+    return { userId, addressId };
+  };
+
+  const createOrderWithDetails = async (paymentMethod: "cash" | "vnpay") => {
+    const context = await resolveCheckoutContext();
+    if (!context) return null;
+    const { userId, addressId } = context;
+
+    const order = await createOrder(
+      userId,
+      addressId,
+      "pending",
+      totalPrice,
+      paymentMethod
+    );
+
+    await Promise.all(
+      cartItems.map((item) => {
+        const variantId = item.variants_id?._id;
+        if (!variantId) return Promise.resolve();
+        return createOrderDetail(
+          order._id,
+          variantId,
+          item.quantity,
+          item.price
+        );
+      })
+    );
+
+    return order;
+  };
+
+  const finalizeCartAfterOrder = async () => {
+    await Promise.all(cartItems.map((item) => deleteCartItem(item._id)));
+    await loadCartItems();
+    router.replace("/(tabs)/notifications");
+  };
+
+  const handleCashPayment = async () => {
     if (cartItems.length === 0) return;
     try {
       setPaying(true);
-      const authUser = await getAuthUser();
-      const userId = (authUser as { _id?: string })?._id;
-      if (!userId) {
-        Alert.alert("Lỗi", "Không tìm thấy thông tin người dùng.");
-        return;
-      }
+      const order = await createOrderWithDetails("cash");
+      if (!order?._id) return;
 
-      const account = await getAccountById(userId);
-      const addressId = account.addresses?.[0]?._id;
-      if (!addressId) {
-        Alert.alert("Thiếu địa chỉ", "Vui lòng cập nhật địa chỉ giao hàng.");
-        return;
-      }
-
-      const order = await createOrder(userId, addressId, "pending", totalPrice);
-
-      await Promise.all(
-        cartItems.map((item) => {
-          const variantId = item.variants_id?._id;
-          if (!variantId) return Promise.resolve();
-          return createOrderDetail(
-            order._id,
-            variantId,
-            item.quantity,
-            item.price
-          );
-        })
-      );
-
-      await Promise.all(cartItems.map((item) => deleteCartItem(item._id)));
-      await loadCartItems();
-
-      Alert.alert("Thành công", "Đã tạo đơn hàng.");
-      router.replace("/(tabs)/notifications");
+      await finalizeCartAfterOrder();
+      Alert.alert("Thành công", "Đã tạo đơn hàng. Thanh toán tiền mặt khi nhận.");
     } catch (error) {
-      console.error("Error creating order:", error);
+      console.error("Error creating cash order:", error);
       Alert.alert("Lỗi", "Không thể tạo đơn hàng. Vui lòng thử lại.");
     } finally {
       setPaying(false);
     }
+  };
+
+  const handleVnpayPayment = async () => {
+    if (cartItems.length === 0) return;
+    try {
+      setPaying(true);
+      const context = await resolveCheckoutContext();
+      if (!context) return;
+      const { userId, addressId } = context;
+
+      const items = cartItems
+        .map((item) => ({
+          variants_id: item.variants_id?._id || "",
+          quantity: item.quantity,
+          price: item.price,
+        }))
+        .filter((item) => item.variants_id);
+
+      const paymentUrl = await createVnpayPaymentUrlForCart({
+        user_id: userId,
+        address_id: addressId,
+        items,
+        total_amount: totalPrice,
+        orderInfo: `Thanh toán đơn hàng ${userId}`,
+        locale: "VN",
+      });
+      const canOpen = await Linking.canOpenURL(paymentUrl);
+      if (!canOpen) {
+        Alert.alert("Lỗi", "Không thể mở trang thanh toán.");
+        return;
+      }
+      await Linking.openURL(paymentUrl);
+      Alert.alert(
+        "Đang thanh toán",
+        "Vui lòng hoàn tất thanh toán trên VNPAY. Đơn hàng sẽ hiển thị sau khi thanh toán thành công."
+      );
+    } catch (error) {
+      console.error("Error creating VNPAY order:", error);
+      const message =
+        error instanceof Error ? error.message : "Không thể tạo đơn hàng.";
+      Alert.alert("Lỗi", message);
+    } finally {
+      setPaying(false);
+    }
+  };
+
+  const handlePay = () => {
+    if (cartItems.length === 0 || paying) return;
+    Alert.alert(
+      "Chọn hình thức thanh toán",
+      "Bạn muốn thanh toán tiền mặt hay VNPAY?",
+      [
+        { text: "Hủy", style: "cancel" },
+        {
+          text: "Tiền mặt",
+          onPress: () => {
+            void handleCashPayment();
+          },
+        },
+        {
+          text: "VNPAY",
+          onPress: () => {
+            void handleVnpayPayment();
+          },
+        },
+      ]
+    );
   };
 
   if (loading) {
@@ -384,7 +478,7 @@ export default function CartScreen() {
                             </View>
                           )}
                           <Text style={styles.optionPrice}>
-                            $ {variant.price.toFixed(2)}
+                            {formatVnd(variant.price)}
                           </Text>
                         </View>
                         <View style={styles.quantityContainer}>
@@ -455,7 +549,7 @@ export default function CartScreen() {
         <View style={styles.footer}>
           <View style={styles.totalContainer}>
             <Text style={styles.totalLabel}>Tổng tiền</Text>
-            <Text style={styles.totalPrice}>$ {totalPrice.toFixed(2)}</Text>
+            <Text style={styles.totalPrice}>{formatVnd(totalPrice)}</Text>
           </View>
           <TouchableOpacity
             style={[styles.payButton, paying && styles.payButtonDisabled]}
