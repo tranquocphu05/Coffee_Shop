@@ -66,8 +66,9 @@ apiClient.interceptors.response.use(
 
     // Xử lý lỗi từ server
     const errorMessage = 
-      (error.response.data as { error?: string; message?: string })?.error ||
-      (error.response.data as { error?: string; message?: string })?.message ||
+      (error.response.data as { error?: string; message?: string; msg?: string })?.error ||
+      (error.response.data as { error?: string; message?: string; msg?: string })?.message ||
+      (error.response.data as { error?: string; message?: string; msg?: string })?.msg ||
       error.message ||
       'Đã xảy ra lỗi';
     
@@ -425,6 +426,8 @@ export type Order = {
   address_id: string;
   status: string;
   total_amount?: number;
+  paymentMethod?: string;
+  paymentStatus?: string;
 };
 
 export type OrderDetail = {
@@ -446,6 +449,17 @@ type OrderDetailsResponse = {
   data?: { order_details?: OrderDetail[] };
   error?: string;
 };
+
+type VnpayCreateResponse =
+  | string
+  | {
+      message?: string;
+      data?: string;
+      url?: string;
+      paymentUrl?: string;
+      vnpayUrl?: string;
+      error?: string;
+    };
 
 type AddressesResponse = {
   message?: string;
@@ -567,7 +581,8 @@ export async function createOrder(
   user_id: string,
   address_id: string,
   status: string,
-  total_amount: number
+  total_amount: number,
+  payment_method?: "cash" | "vnpay"
 ): Promise<{ _id: string }> {
   const url = '/api/order';
 
@@ -577,6 +592,7 @@ export async function createOrder(
       address_id,
       status,
       total_amount,
+      payment_method,
     });
     const json = response.data;
 
@@ -587,6 +603,73 @@ export async function createOrder(
     return json.data.order;
   } catch (error) {
     console.error('[API] Create order error:', error);
+    throw error;
+  }
+}
+
+export async function createVnpayPaymentUrl(
+  orderId: string,
+  orderInfo?: string,
+  locale: "VN" | "EN" = "VN"
+): Promise<string> {
+  const url = "/api/vnpay/create-payment-url";
+
+  try {
+    const response = await apiClient.post<VnpayCreateResponse>(url, {
+      orderId,
+      orderInfo,
+      locale,
+    });
+    const json = response.data;
+    const paymentUrl =
+      typeof json === "string"
+        ? json
+        : json?.data || json?.url || json?.paymentUrl || json?.vnpayUrl;
+
+    if (!paymentUrl) {
+      throw new Error("Phản hồi từ server không hợp lệ");
+    }
+
+    return paymentUrl;
+  } catch (error) {
+    console.error("[API] Create VNPAY URL error:", error);
+    throw error;
+  }
+}
+
+export async function createVnpayPaymentUrlForCart(payload: {
+  user_id: string;
+  address_id: string;
+  items: Array<{ variants_id: string; quantity: number; price: number }>;
+  total_amount: number;
+  orderInfo?: string;
+  locale?: "VN" | "EN";
+}): Promise<string> {
+  const url = "/api/vnpay/create-payment-url";
+  const locale = payload.locale || "VN";
+
+  try {
+    const response = await apiClient.post<VnpayCreateResponse>(url, {
+      user_id: payload.user_id,
+      address_id: payload.address_id,
+      items: payload.items,
+      total_amount: payload.total_amount,
+      orderInfo: payload.orderInfo,
+      locale,
+    });
+    const json = response.data;
+    const paymentUrl =
+      typeof json === "string"
+        ? json
+        : json?.data || json?.url || json?.paymentUrl || json?.vnpayUrl;
+
+    if (!paymentUrl) {
+      throw new Error("Phản hồi từ server không hợp lệ");
+    }
+
+    return paymentUrl;
+  } catch (error) {
+    console.error("[API] Create VNPAY URL error:", error);
     throw error;
   }
 }

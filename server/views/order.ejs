@@ -581,6 +581,11 @@
             { value: 'delivered', label: 'Đã giao' },
             { value: 'cancelled', label: 'Đã hủy' }
         ];
+        const vndFormatter = new Intl.NumberFormat('vi-VN');
+        const formatCurrency = (value) => {
+            if (typeof value !== 'number' || !Number.isFinite(value)) return '-';
+            return `${vndFormatter.format(Math.round(value))} đ`;
+        };
 
         function openEditOrderModal() {
             if (!editOrderModal) return;
@@ -629,7 +634,7 @@
                 orderTableBody.innerHTML = orders
                     .map((order) => {
                         orderMap[String(order._id)] = order;
-                        const totalAmount = typeof order.total_amount === 'number' ? order.total_amount : '-';
+                        const totalAmount = formatCurrency(order.total_amount);
                         const userLabel = order.user?.name || order.address?.name || 'Ẩn danh';
                         const addressLabel = order.address?.address || '';
                         const phoneLabel = order.address?.phone || '';

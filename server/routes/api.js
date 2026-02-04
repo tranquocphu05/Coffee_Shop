@@ -8,6 +8,7 @@ var productCtrl = require("../controllers/product.controller");
 var productVariantCtrl = require("../controllers/product_variant.controller");
 var categoryCtrl = require("../controllers/category.controller");
 var orderCtrl = require("../controllers/order.controller");
+var vnpayCtrl = require("../controllers/vnpay.controller");
 var cartCtrl = require("../controllers/cart.controller");
 var orderDetailCtrl = require("../controllers/order_detail.controller");
 var addressCtrl = require("../controllers/address.controller");
@@ -106,6 +107,11 @@ router.get("/order/:id", orderCtrl.getOrderById);
 router.post("/order", orderCtrl.createOrder);
 router.put("/order/:id", orderCtrl.updateOrder);
 router.delete("/order/:id", orderCtrl.deleteOrder);
+
+// VNPay
+router.post("/vnpay/create-payment-url", mdw.api_auth, vnpayCtrl.createPaymentUrl);
+router.get("/vnpay/return", vnpayCtrl.vnpayReturn);
+router.get("/vnpay/ipn", vnpayCtrl.vnpayIPN);
 
 // Cart - Tất cả routes đều cần xác thực token
 router.get("/cart", mdw.api_auth, cartCtrl.getCartItems);

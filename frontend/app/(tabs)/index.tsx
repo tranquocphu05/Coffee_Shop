@@ -25,6 +25,7 @@ import {
 import * as SecureStore from "expo-secure-store";
 import { API_BASE_URL } from "@/constants/api";
 import { useFocusEffect } from "@react-navigation/native";
+import { formatVnd, formatVndRange } from "@/lib/format";
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -193,10 +194,7 @@ export default function HomeScreen() {
     if (!prices.length) return null;
     const minPrice = Math.min(...prices);
     const maxPrice = Math.max(...prices);
-    if (minPrice === maxPrice) {
-      return `$ ${minPrice.toFixed(2)}`;
-    }
-    return `$ ${minPrice.toFixed(2)} - $ ${maxPrice.toFixed(2)}`;
+    return formatVndRange(minPrice, maxPrice);
   };
 
   const getPriceValue = (variants: ProductWithVariants["variants"]) => {
@@ -354,12 +352,9 @@ export default function HomeScreen() {
                       </Text>
                       <View style={styles.productFooter}>
                         {priceValue !== null ? (
-                          <View style={styles.priceRow}>
-                            <Text style={styles.priceCurrency}>$</Text>
-                            <Text style={styles.productPriceValue}>
-                              {priceValue.toFixed(2)}
-                            </Text>
-                          </View>
+                          <Text style={styles.productPriceValue}>
+                            {formatVnd(priceValue)}
+                          </Text>
                         ) : (
                           <Text style={styles.productPriceMuted}>Chưa có giá</Text>
                         )}

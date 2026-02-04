@@ -326,6 +326,91 @@
             margin-top: 6px;
         }
 
+        .stats-section {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .stats-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .date-range {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .date-input {
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 6px 10px;
+            border-radius: 8px;
+            font-size: 12px;
+        }
+
+        .chart-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 16px;
+        }
+
+        .chart-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        .chart-total {
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        .chart-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .chart-canvas {
+            width: 100%;
+            height: 220px;
+        }
+
+
+
+        .mini-charts {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .mini-chart {
+            height: 160px;
+        }
+
         .error-message {
             background: rgba(239, 68, 68, 0.12);
             color: #fecaca;
@@ -359,6 +444,10 @@
                 flex-direction: column;
                 align-items: flex-start;
                 gap: 12px;
+            }
+
+            .chart-grid {
+                grid-template-columns: 1fr;
             }
 
             .user-details {
@@ -441,10 +530,53 @@
                         </div>
                     </div>
                 </section>
+
+                <section class="stats-section">
+                    <div class="stats-toolbar">
+                        <div>
+                            <div class="page-label">Màn hình chính</div>
+                            <div class="chart-title">Thống kê giao dịch</div>
+                        </div>
+                        <div class="date-range">
+                            <input class="date-input" type="date" id="statStartDate" />
+                            <span>Đến</span>
+                            <input class="date-input" type="date" id="statEndDate" />
+                            <button class="btn-refresh" id="refreshChart">Tải lại</button>
+                        </div>
+                    </div>
+
+                    <div class="chart-grid">
+                        <div class="chart-card">
+                            <div class="chart-header">
+                                <span>Tổng tiền giao dịch</span>
+                                <span class="chart-total" id="totalRevenueLabel">Tổng: 0 VND</span>
+                            </div>
+                            <canvas class="chart-canvas" id="totalRevenueChart"></canvas>
+                        </div>
+
+                        <div class="mini-charts">
+                            <div class="chart-card">
+                                <div class="chart-header">
+                                    <span>Giao dịch thành công</span>
+                                    <span class="chart-total" id="successRevenueLabel">Tổng: 0 VND</span>
+                                </div>
+                                <canvas class="chart-canvas mini-chart" id="successRevenueChart"></canvas>
+                            </div>
+                            <div class="chart-card">
+                                <div class="chart-header">
+                                    <span>Giao dịch đang thực hiện</span>
+                                    <span class="chart-total" id="pendingRevenueLabel">Tổng: 0 VND</span>
+                                </div>
+                                <canvas class="chart-canvas mini-chart" id="pendingRevenueChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </section>
             </main>
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script>
         // Lấy token từ URL hoặc localStorage
         const urlParams = new URLSearchParams(window.location.search);
@@ -604,6 +736,200 @@
             updateStats({ categoryCount: categories.length, productCount: products.length });
         }
 
+        const currencyFormatter = new Intl.NumberFormat('vi-VN');
+        const formatCurrency = (value) => `${currencyFormatter.format(Math.round(value || 0))} VND`;
+        const hourLabels = Array.from({ length: 24 }, (_, hour) => `${String(hour).padStart(2, '0')}:00`);
+        let totalChart = null;
+        let successChart = null;
+        let pendingChart = null;
+
+        function parseOrderDate(id) {
+            if (!id || id.length < 8) return null;
+            const timestamp = parseInt(id.substring(0, 8), 16) * 1000;
+            return new Date(timestamp);
+        }
+
+        function resolveDateRange() {
+            const startInput = document.getElementById('statStartDate');
+            const endInput = document.getElementById('statEndDate');
+            const today = new Date();
+            const todayValue = today.toISOString().slice(0, 10);
+
+            if (!startInput.value) startInput.value = todayValue;
+            if (!endInput.value) endInput.value = todayValue;
+
+            const startValue = startInput.value;
+            const endValue = endInput.value;
+
+            const startDate = new Date(`${startValue}T00:00:00`);
+            const endDate = new Date(`${endValue}T23:59:59`);
+            return { startDate, endDate };
+        }
+
+        function initCharts() {
+            const totalCtx = document.getElementById('totalRevenueChart');
+            const successCtx = document.getElementById('successRevenueChart');
+            const pendingCtx = document.getElementById('pendingRevenueChart');
+
+            if (!totalCtx || !successCtx || !pendingCtx || !window.Chart) return;
+
+            totalChart = new Chart(totalCtx, {
+                type: 'bar',
+                data: {
+                    labels: hourLabels,
+                    datasets: [{
+                        label: 'Tổng giao dịch',
+                        data: Array(24).fill(0),
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.45)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { ticks: { color: '#a3adc2' }, grid: { color: 'rgba(255,255,255,0.06)' } },
+                        x: { ticks: { color: '#a3adc2', autoSkip: false, maxRotation: 0 }, grid: { color: 'rgba(255,255,255,0.03)' } }
+                    }
+                }
+            });
+
+            successChart = new Chart(successCtx, {
+                type: 'bar',
+                data: {
+                    labels: hourLabels,
+                    datasets: [{
+                        label: 'Thành công',
+                        data: Array(24).fill(0),
+                        borderColor: '#22c55e',
+                        backgroundColor: 'rgba(34, 197, 94, 0.45)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    plugins: { legend: { display: false } },
+                    scales: { y: { display: false }, x: { display: false } }
+                }
+            });
+
+            pendingChart = new Chart(pendingCtx, {
+                type: 'bar',
+                data: {
+                    labels: hourLabels,
+                    datasets: [{
+                        label: 'Đang thực hiện',
+                        data: Array(24).fill(0),
+                        borderColor: '#f59e0b',
+                        backgroundColor: 'rgba(245, 158, 11, 0.45)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    plugins: { legend: { display: false } },
+                    scales: { y: { display: false }, x: { display: false } }
+                }
+            });
+        }
+
+        function updateCharts({ total, success, pending, totalsByDay, successByDay, pendingByDay, labels }) {
+            document.getElementById('totalRevenueLabel').textContent = `Tổng: ${formatCurrency(total)}`;
+            document.getElementById('successRevenueLabel').textContent = `Tổng: ${formatCurrency(success)}`;
+            document.getElementById('pendingRevenueLabel').textContent = `Tổng: ${formatCurrency(pending)}`;
+
+            if (totalChart) {
+                totalChart.data.labels = labels;
+                totalChart.data.datasets[0].data = totalsByDay;
+                totalChart.update();
+            }
+            if (successChart) {
+                successChart.data.labels = labels;
+                successChart.data.datasets[0].data = successByDay;
+                successChart.update();
+            }
+            if (pendingChart) {
+                pendingChart.data.labels = labels;
+                pendingChart.data.datasets[0].data = pendingByDay;
+                pendingChart.update();
+            }
+        }
+
+        async function loadTransactionStats() {
+            const { startDate, endDate } = resolveDateRange();
+            const headers = {};
+            if (token) {
+                headers['Authorization'] = 'Bearer ' + token;
+            }
+            const response = await fetch('/api/order?include=detail', { headers });
+            const data = await response.json();
+            if (!response.ok) {
+                console.error('Load orders error:', data.error || data.msg);
+                return;
+            }
+
+            const orders = (data.data && data.data.orders) || [];
+            const dayLabels = [];
+            const totalsByDay = [];
+            const successByDay = [];
+            const pendingByDay = [];
+            const dayIndexMap = new Map();
+            const cursor = new Date(startDate);
+            while (cursor <= endDate) {
+                const dayKey = cursor.toISOString().slice(0, 10);
+                dayIndexMap.set(dayKey, dayLabels.length);
+                dayLabels.push(dayKey.split('-').reverse().join('-'));
+                totalsByDay.push(0);
+                successByDay.push(0);
+                pendingByDay.push(0);
+                cursor.setDate(cursor.getDate() + 1);
+            }
+            let total = 0;
+            let success = 0;
+            let pending = 0;
+
+            orders.forEach((order) => {
+                const createdAt = parseOrderDate(order._id);
+                if (!createdAt || createdAt < startDate || createdAt > endDate) return;
+                const amount = Number(order.total_amount) || 0;
+                const dayKey = createdAt.toISOString().slice(0, 10);
+                const dayIndex = dayIndexMap.get(dayKey);
+                if (typeof dayIndex === 'undefined') return;
+
+                total += amount;
+                totalsByDay[dayIndex] += amount;
+
+                const method = String(order.paymentMethod || '').toLowerCase();
+                const paymentStatus = String(order.paymentStatus || '').toUpperCase();
+                const isCash = method === 'cash' || method === '';
+                const isSuccess = isCash || paymentStatus === 'PAID';
+                const isPending = method === 'vnpay' && paymentStatus !== 'PAID';
+
+                if (isSuccess) {
+                    success += amount;
+                    successByDay[dayIndex] += amount;
+                } else if (isPending) {
+                    pending += amount;
+                    pendingByDay[dayIndex] += amount;
+                }
+            });
+
+            const maxDays = 5;
+            const startIndex = Math.max(0, dayLabels.length - maxDays);
+            const labels = dayLabels.slice(startIndex);
+            const totalsSlice = totalsByDay.slice(startIndex);
+            const successSlice = successByDay.slice(startIndex);
+            const pendingSlice = pendingByDay.slice(startIndex);
+
+            updateCharts({
+                total,
+                success,
+                pending,
+                totalsByDay: totalsSlice,
+                successByDay: successSlice,
+                pendingByDay: pendingSlice,
+                labels
+            });
+        }
+
         const refreshStatsBtn = document.getElementById('refreshStats');
         if (refreshStatsBtn) {
             refreshStatsBtn.addEventListener('click', async () => {
@@ -611,7 +937,23 @@
             });
         }
 
+        const refreshChartBtn = document.getElementById('refreshChart');
+        if (refreshChartBtn) {
+            refreshChartBtn.addEventListener('click', async () => {
+                loadTransactionStats();
+            });
+        }
+
+        const startDateInput = document.getElementById('statStartDate');
+        const endDateInput = document.getElementById('statEndDate');
+        if (startDateInput && endDateInput) {
+            startDateInput.addEventListener('change', loadTransactionStats);
+            endDateInput.addEventListener('change', loadTransactionStats);
+        }
+
+        initCharts();
         loadStats();
+        loadTransactionStats();
     </script>
 </body>
 </html>
