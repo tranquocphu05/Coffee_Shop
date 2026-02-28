@@ -8,7 +8,7 @@ router.get("/login", (req, res, next) => {
 });
 
 router.get("/admin/dashboard", (req, res, next) => {
-  res.render("admin_dashboard.ejs");
+  res.render("admin");
 });
 
 router.get("/admin.html", (req, res) => {

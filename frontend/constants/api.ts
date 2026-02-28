@@ -4,7 +4,7 @@ import { Platform } from 'react-native';
 // Đối với iOS Simulator và Web, có thể dùng localhost
 const getDefaultApiUrl = () => {
   if (Platform.OS === 'android') {
-    return 'http://10.0.2.2:3000';
+    return 'http://192.168.18.103:3000';
   }
   return 'http://localhost:3000';
 };
