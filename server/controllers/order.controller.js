@@ -111,6 +111,8 @@ exports.getOrders = async (req, res) => {
             total_amount: 1,
             paymentMethod: 1,
             paymentStatus: 1,
+            vnpTransactionNo: 1,
+            paidAt: 1,
             user: { name: 1 },
             address: { name: 1, phone: 1, address: 1 },
           },
